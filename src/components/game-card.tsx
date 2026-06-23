@@ -1,4 +1,5 @@
-import { Play } from "lucide-react";
+import { Play, Heart } from "lucide-react";
+import { useFavorites } from "@/lib/favorites";
 
 export interface Game {
   id: string;
@@ -10,6 +11,8 @@ export interface Game {
 }
 
 export function GameCard({ game }: { game: Game }) {
+  const { isFavorite, toggle } = useFavorites();
+  const fav = isFavorite(game.id);
   return (
     <button className="group relative aspect-[3/4] w-full overflow-hidden rounded-xl border border-border/60 bg-card text-left transition-all duration-300 hover:-translate-y-1 hover:border-gold/70 hover:shadow-[var(--shadow-gold)]">
       <img
@@ -27,6 +30,28 @@ export function GameCard({ game }: { game: Game }) {
           {game.tag}
         </span>
       )}
+
+      <span
+        role="button"
+        tabIndex={0}
+        aria-label={fav ? "Remove from favorites" : "Add to favorites"}
+        aria-pressed={fav}
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          toggle(game.id);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.stopPropagation();
+            e.preventDefault();
+            toggle(game.id);
+          }
+        }}
+        className="absolute right-2 top-2 z-10 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-border/60 bg-background/70 text-muted-foreground backdrop-blur transition-colors hover:border-gold hover:text-gold"
+      >
+        <Heart className={`h-4 w-4 ${fav ? "fill-gold text-gold" : ""}`} />
+      </span>
 
       <div className="absolute inset-x-0 bottom-0 p-3">
         <p className="truncate font-display text-sm font-semibold text-foreground">{game.title}</p>

@@ -1,0 +1,49 @@
+import type { Game } from "@/components/game-card";
+import pharaoh from "@/assets/game-pharaoh.jpg";
+import dragon from "@/assets/game-dragon.jpg";
+import diamond from "@/assets/game-diamond.jpg";
+import royal from "@/assets/game-royal.jpg";
+import blackjack from "@/assets/game-blackjack.jpg";
+import roulette from "@/assets/game-roulette.jpg";
+import baccarat from "@/assets/game-baccarat.jpg";
+import crash from "@/assets/game-crash.jpg";
+import mines from "@/assets/game-mines.jpg";
+import plinko from "@/assets/game-plinko.jpg";
+import dice from "@/assets/game-dice.jpg";
+import poker from "@/assets/game-poker.jpg";
+
+export const slotGames: Game[] = [
+  { id: "pharaoh", title: "Golden Pharaoh", provider: "Pragmatic", image: pharaoh, tag: "Hot", players: 1842 },
+  { id: "dragon", title: "Lucky Dragon", provider: "PG Soft", image: dragon, players: 1204 },
+  { id: "diamond", title: "Diamond Riches", provider: "NetEnt", image: diamond, tag: "New", players: 982 },
+  { id: "royal", title: "Royal Fortune", provider: "Play'n GO", image: royal, players: 1530 },
+  { id: "pharaoh2", title: "Pharaoh's Gold II", provider: "Novomatic", image: pharaoh, players: 720 },
+  { id: "dragon2", title: "Dragon Wilds", provider: "Red Tiger", image: dragon, players: 612 },
+];
+
+export const liveGames: Game[] = [
+  { id: "blackjack", title: "VIP Blackjack", provider: "Evolution", image: blackjack, tag: "Live", players: 342 },
+  { id: "roulette", title: "Lightning Roulette", provider: "Evolution", image: roulette, tag: "Live", players: 891 },
+  { id: "baccarat", title: "Speed Baccarat", provider: "Pragmatic Live", image: baccarat, tag: "Live", players: 256 },
+  { id: "poker", title: "Casino Hold'em", provider: "Evolution", image: poker, tag: "Live", players: 184 },
+  { id: "blackjack2", title: "Salon Privé Blackjack", provider: "Evolution", image: blackjack, tag: "VIP", players: 64 },
+  { id: "roulette2", title: "Auto Roulette", provider: "Pragmatic Live", image: roulette, players: 423 },
+];
+
+export const originals: Game[] = [
+  { id: "crash", title: "GoldenAce Crash", provider: "GoldenAce", image: crash, tag: "Original", players: 2134 },
+  { id: "mines", title: "Mines", provider: "GoldenAce", image: mines, tag: "Original", players: 1102 },
+  { id: "plinko", title: "Plinko Royale", provider: "GoldenAce", image: plinko, tag: "Original", players: 1840 },
+  { id: "dice", title: "Golden Dice", provider: "GoldenAce", image: dice, tag: "Original", players: 678 },
+  { id: "crash2", title: "Limbo", provider: "GoldenAce", image: crash, players: 521 },
+  { id: "mines2", title: "Keno Gold", provider: "GoldenAce", image: mines, players: 318 },
+];
+
+export const tableGames: Game[] = [
+  { id: "t-blackjack", title: "Classic Blackjack", provider: "GoldenAce", image: blackjack, players: 142 },
+  { id: "t-roulette", title: "European Roulette", provider: "GoldenAce", image: roulette, players: 198 },
+  { id: "t-baccarat", title: "Punto Banco", provider: "GoldenAce", image: baccarat, players: 88 },
+  { id: "t-poker", title: "Three Card Poker", provider: "GoldenAce", image: poker, players: 76 },
+  { id: "t-dice", title: "Sic Bo", provider: "GoldenAce", image: dice, players: 54 },
+  { id: "t-royal", title: "Pai Gow Poker", provider: "GoldenAce", image: royal, players: 32 },
+];

@@ -4,8 +4,9 @@ import { SiteHeader } from "@/components/site-header";
 import { BottomNav } from "@/components/bottom-nav";
 import { Hero } from "@/components/hero";
 import { GameRow } from "@/components/game-row";
-import { slotGames, liveGames, originals, tableGames } from "@/lib/games";
+import { categoryMap } from "@/lib/games";
 import { GameSearch } from "@/components/game-search";
+import { CategoryPills } from "@/components/category-pills";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { useFavorites } from "@/lib/favorites";
@@ -24,7 +25,12 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const { ids } = useFavorites();
-  const allGames = [...slotGames, ...liveGames, ...originals, ...tableGames];
+  const allGames = [
+    ...categoryMap.slots.games,
+    ...categoryMap.live.games,
+    ...categoryMap.originals.games,
+    ...categoryMap.tables.games,
+  ];
   const favoriteGames = allGames.filter((g) => ids.includes(g.id));
 
   return (
@@ -34,6 +40,8 @@ function Index() {
         <SiteHeader />
         <main className="mx-auto w-full max-w-7xl space-y-12 px-4 py-6 sm:px-6 sm:py-10">
           <Hero />
+
+          <CategoryPills />
 
           <GameSearch />
 
@@ -52,7 +60,8 @@ function Index() {
             title="Featured Casino"
             subtitle="Hand-picked games trending right now"
             icon={<Flame className="h-5 w-5" />}
-            games={[...slotGames.slice(0, 3), ...originals.slice(0, 3)]}
+            games={categoryMap.casino.games.slice(0, 10)}
+            categorySlug="casino"
           />
 
           <GameRow
@@ -60,7 +69,8 @@ function Index() {
             title="Slot Games"
             subtitle="Spin the reels on the world's biggest slots"
             icon={<Dices className="h-5 w-5" />}
-            games={slotGames}
+            games={categoryMap.slots.games.slice(0, 10)}
+            categorySlug="slots"
           />
 
           <GameRow
@@ -68,7 +78,8 @@ function Index() {
             title="Live Casino"
             subtitle="Real dealers, real time, real winnings"
             icon={<Radio className="h-5 w-5" />}
-            games={liveGames}
+            games={categoryMap.live.games.slice(0, 10)}
+            categorySlug="live"
           />
 
           <GameRow
@@ -76,7 +87,8 @@ function Index() {
             title="GoldenAce Originals"
             subtitle="Exclusive in-house games you won't find anywhere else"
             icon={<Sparkles className="h-5 w-5" />}
-            games={originals}
+            games={categoryMap.originals.games.slice(0, 10)}
+            categorySlug="originals"
           />
 
           <GameRow
@@ -84,7 +96,8 @@ function Index() {
             title="Table Games"
             subtitle="The classics — blackjack, roulette, baccarat & more"
             icon={<Spade className="h-5 w-5" />}
-            games={tableGames}
+            games={categoryMap.tables.games.slice(0, 10)}
+            categorySlug="tables"
           />
 
           <footer id="promotions" className="border-t border-border/60 pt-10 text-center text-sm text-muted-foreground">

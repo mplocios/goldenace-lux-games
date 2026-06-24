@@ -24,7 +24,8 @@ export const Route = createFileRoute("/category/$category")({
 });
 
 function CategoryPage() {
-  const { id } = Route.useLoaderData();
+  const params = Route.useParams();
+  const id = params.category as CategoryId;
   const cat = categoryMap[id];
   const [page, setPage] = useState(1);
   const totalPages = Math.max(1, Math.ceil(cat.games.length / PAGE_SIZE));

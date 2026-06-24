@@ -47,3 +47,28 @@ export const tableGames: Game[] = [
   { id: "t-dice", title: "Sic Bo", provider: "GoldenAce", image: dice, players: 54 },
   { id: "t-royal", title: "Pai Gow Poker", provider: "GoldenAce", image: royal, players: 32 },
 ];
+
+function expand(base: Game[], target: number): Game[] {
+  const out: Game[] = [];
+  for (let i = 0; i < target; i++) {
+    const g = base[i % base.length];
+    const lap = Math.floor(i / base.length);
+    out.push({
+      ...g,
+      id: `${g.id}-${i}`,
+      title: lap === 0 ? g.title : `${g.title} ${["II", "III", "IV", "V", "VI", "VII", "VIII", "IX"][lap - 1] ?? lap + 1}`,
+      players: g.players ? Math.max(20, Math.floor(g.players * (0.4 + Math.random()))) : undefined,
+    });
+  }
+  return out;
+}
+
+export const categoryMap = {
+  slots: { label: "Slot Games", games: expand(slotGames, 50) },
+  live: { label: "Live Casino", games: expand(liveGames, 50) },
+  originals: { label: "GoldenAce Originals", games: expand(originals, 50) },
+  tables: { label: "Table Games", games: expand(tableGames, 50) },
+  casino: { label: "Featured Casino", games: expand([...slotGames.slice(0, 3), ...originals.slice(0, 3)], 50) },
+} as const;
+
+export type CategoryId = keyof typeof categoryMap;

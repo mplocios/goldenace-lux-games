@@ -7,13 +7,15 @@ import { Button } from "@/components/ui/button";
 
 const PAGE_SIZE = 50;
 
+const isCategoryId = (s: string): s is CategoryId => s in categoryMap;
+
 export const Route = createFileRoute("/category/$category")({
   head: ({ params }) => ({
-    meta: [{ title: `${(categoryMap as any)[params.category]?.label ?? "Games"} — GoldenAce` }],
+    meta: [{ title: `${isCategoryId(params.category) ? categoryMap[params.category].label : "Games"} — GoldenAce` }],
   }),
   loader: ({ params }) => {
-    if (!(params.category in categoryMap)) throw notFound();
-    return { id: params.category as CategoryId };
+    if (!isCategoryId(params.category)) throw notFound();
+    return { id: params.category };
   },
   component: CategoryPage,
   notFoundComponent: () => (

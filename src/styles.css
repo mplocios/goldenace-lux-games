@@ -200,3 +200,8 @@
   scrollbar-width: none;
   &::-webkit-scrollbar { display: none; }
 }
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  section[id] { scroll-margin-top: 6rem; }
+}

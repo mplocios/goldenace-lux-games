@@ -1,0 +1,17 @@
+{
+	"compilerOptions": {
+		"target": "ES6",
+    "module": "commonjs",
+		// "moduleResolution": "NodeNext",
+		"resolveJsonModule": true,
+		"allowJs": true,
+		"outDir": "./dist",
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"skipLibCheck": true,
+
+		"strict": false,
+	},
+	// "include": ["src/**/*"],
+  "exclude": ["node_modules", "testfiles"]
+}

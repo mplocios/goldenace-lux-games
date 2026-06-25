@@ -1,15 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-  Outlet,
-  Link,
-  createRootRouteWithContext,
-  useRouter,
-  HeadContent,
-  Scripts,
-} from "@tanstack/react-router";
-import { type ReactNode } from "react";
+import { Outlet, Link, createRootRouteWithContext, useRouter } from "@tanstack/react-router";
+import { useEffect } from "react";
 
-import appCss from "../styles.css?url";
 import faviconUrl from "../assets/ace-mini-icon.png";
 import { FavoritesProvider } from "../lib/favorites";
 import { AuthProvider } from "../lib/auth";
@@ -72,61 +64,31 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "GoldenAce — Fortune Awaits" },
-      { name: "description", content: "GoldenAce is the ultimate winning online casino featuring slots, live dealer tables, and exclusive in-house games." },
-      { name: "author", content: "GoldenAce" },
-      { property: "og:title", content: "GoldenAce — Fortune Awaits" },
-      { property: "og:description", content: "Play premium slots, live dealer games and exclusive in-house titles at GoldenAce." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@GoldenAce" },
-    ],
-    links: [
-      { rel: "icon", type: "image/png", href: faviconUrl },
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap",
-      },
-    ],
-  }),
-  shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
 });
 
-function RootShell({ children }: { children: ReactNode }) {
-  return (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  );
-}
-
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    const link = document.querySelector("link[rel='icon']") as HTMLLinkElement | null;
+    if (link) {
+      link.href = faviconUrl;
+    } else {
+      const el = document.createElement("link");
+      el.rel = "icon";
+      el.type = "image/png";
+      el.href = faviconUrl;
+      document.head.appendChild(el);
+    }
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <FavoritesProvider>
-          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
         </FavoritesProvider>
       </AuthProvider>

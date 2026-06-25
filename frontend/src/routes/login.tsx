@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Sign in — GoldenAce" }] }),
   component: LoginPage,
 });
 

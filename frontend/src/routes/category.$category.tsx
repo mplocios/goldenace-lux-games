@@ -13,17 +13,6 @@ const isCategoryId = (s: string): s is CategoryId => s in categoryMap;
 const isValid = (s: string) => s === "favorites" || isCategoryId(s);
 
 export const Route = createFileRoute("/category/$category")({
-  head: ({ params }) => ({
-    meta: [{
-      title: `${
-        params.category === "favorites"
-          ? "Your Favorites"
-          : isCategoryId(params.category)
-            ? categoryMap[params.category].label
-            : "Games"
-      } — GoldenAce`,
-    }],
-  }),
   loader: ({ params }) => {
     if (!isValid(params.category)) throw notFound();
     return { id: params.category };

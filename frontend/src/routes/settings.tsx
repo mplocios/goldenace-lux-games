@@ -3,7 +3,6 @@ import { ArrowLeft } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/settings")({
-  head: () => ({ meta: [{ title: "Settings — GoldenAce" }] }),
   component: SettingsPage,
 });
 

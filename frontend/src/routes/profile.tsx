@@ -5,7 +5,6 @@ import { useAuth } from "@/lib/auth";
 import acecoin from "@/assets/acecoin.png";
 
 export const Route = createFileRoute("/profile")({
-  head: () => ({ meta: [{ title: "Profile — GoldenAce" }] }),
   component: ProfilePage,
 });
 

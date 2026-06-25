@@ -14,14 +14,6 @@ import { useFavorites } from "@/lib/favorites";
 import { GameRowSkeleton } from "@/components/game-skeleton";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "GoldenAce — Fortune Awaits" },
-      { name: "description", content: "Play premium slots, live dealer tables and exclusive in-house games at GoldenAce, the ultimate winning online casino." },
-      { property: "og:title", content: "GoldenAce — Fortune Awaits" },
-      { property: "og:description", content: "Premium slots, live dealer tables and exclusive originals — your lucky streak starts here." },
-    ],
-  }),
   component: Index,
 });
 

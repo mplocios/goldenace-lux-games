@@ -32,11 +32,11 @@ export function GameRow({ id, title, subtitle, icon, games, categorySlug }: Game
             params={{ category: categorySlug }}
             className="flex items-center gap-1 text-sm font-medium text-gold transition-colors hover:text-gold-bright"
           >
-            View all
+            More
             <ChevronRight className="h-4 w-4" />
           </Link>
         ) : (
-          <span className="flex items-center gap-1 text-sm font-medium text-gold/60">View all<ChevronRight className="h-4 w-4" /></span>
+          <span className="flex items-center gap-1 text-sm font-medium text-gold/60">More<ChevronRight className="h-4 w-4" /></span>
         )}
       </div>
 

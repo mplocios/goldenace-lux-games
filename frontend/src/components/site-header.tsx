@@ -23,7 +23,7 @@ export function SiteHeader() {
           </button>
           <Link to="/" className="flex items-center gap-2">
             <img src={logo} alt="GoldenAce" className="h-9 w-9 sm:h-10 sm:w-10" width={40} height={40} />
-            <span className="font-display text-lg font-bold tracking-wider text-gold-gradient sm:text-xl">
+            <span className="hidden font-display text-lg font-bold tracking-wider text-gold-gradient sm:inline sm:text-xl">
               GOLDENACE
             </span>
           </Link>
@@ -39,13 +39,14 @@ export function SiteHeader() {
             </>
           ) : (
             <>
-              <Button asChild variant="ghost" className="text-sm font-medium text-foreground hover:bg-secondary hover:text-gold">
+              <Button asChild variant="ghost" size="sm" className="text-sm font-medium text-foreground hover:bg-secondary hover:text-gold sm:size-default">
                 <Link to="/login">Sign in</Link>
               </Button>
-              <Button asChild className="bg-gold-gradient font-semibold text-primary-foreground shadow-[var(--shadow-gold)] hover:opacity-90">
+              <Button asChild size="sm" className="bg-gold-gradient font-semibold text-primary-foreground shadow-[var(--shadow-gold)] hover:opacity-90 sm:size-default">
                 <Link to="/register">
-                  <Wallet className="mr-2 h-4 w-4" />
-                  Register
+                  <Wallet className="mr-1 h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Register</span>
+                  <span className="sm:hidden">Join</span>
                 </Link>
               </Button>
             </>

@@ -71,11 +71,13 @@ function expand(base: Game[], target: number): Game[] {
   for (let i = 0; i < target; i++) {
     const g = base[i % base.length];
     const lap = Math.floor(i / base.length);
+    // Deterministic pseudo-random so SSR + client agree (no hydration mismatch)
+    const seed = ((i * 9301 + 49297) % 233280) / 233280;
     out.push({
       ...g,
       id: `${g.id}-${i}`,
       title: lap === 0 ? g.title : `${g.title} ${["II", "III", "IV", "V", "VI", "VII", "VIII", "IX"][lap - 1] ?? lap + 1}`,
-      players: g.players ? Math.max(20, Math.floor(g.players * (0.4 + Math.random()))) : undefined,
+      players: g.players ? Math.max(20, Math.floor(g.players * (0.4 + seed))) : undefined,
     });
   }
   return out;

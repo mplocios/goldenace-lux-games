@@ -48,16 +48,36 @@ export const tableGames: Game[] = [
   { id: "t-royal", title: "Pai Gow Poker", provider: "GoldenAce", image: royal, players: 32 },
 ];
 
+export const promotionGames: Game[] = [
+  { id: "p-bonus", title: "Welcome Bonus Spins", provider: "GoldenAce", image: diamond, tag: "Bonus", players: 920 },
+  { id: "p-cashback", title: "Cashback Roulette", provider: "GoldenAce", image: roulette, tag: "Promo", players: 412 },
+  { id: "p-jackpot", title: "Mega Jackpot Drop", provider: "Pragmatic", image: pharaoh, tag: "Jackpot", players: 1840 },
+  { id: "p-freeplay", title: "Free Play Friday", provider: "GoldenAce", image: crash, tag: "Free", players: 612 },
+  { id: "p-tourney", title: "Daily Tournament", provider: "GoldenAce", image: mines, tag: "Event", players: 380 },
+  { id: "p-leader", title: "Leaderboard Race", provider: "Evolution", image: blackjack, tag: "Race", players: 244 },
+];
+
+export const vipGames: Game[] = [
+  { id: "v-salon", title: "Salon Privé Blackjack", provider: "Evolution", image: blackjack, tag: "VIP", players: 64 },
+  { id: "v-highroller", title: "High-Roller Roulette", provider: "Evolution", image: roulette, tag: "VIP", players: 88 },
+  { id: "v-baccarat", title: "VIP Baccarat Suite", provider: "Pragmatic Live", image: baccarat, tag: "VIP", players: 52 },
+  { id: "v-diamond", title: "Diamond Reels Exclusive", provider: "NetEnt", image: diamond, tag: "Exclusive", players: 132 },
+  { id: "v-royal", title: "Royal Fortune VIP", provider: "Play'n GO", image: royal, tag: "VIP", players: 96 },
+  { id: "v-poker", title: "Private Poker Lounge", provider: "Evolution", image: poker, tag: "VIP", players: 38 },
+];
+
 function expand(base: Game[], target: number): Game[] {
   const out: Game[] = [];
   for (let i = 0; i < target; i++) {
     const g = base[i % base.length];
     const lap = Math.floor(i / base.length);
+    // Deterministic pseudo-random so SSR + client agree (no hydration mismatch)
+    const seed = ((i * 9301 + 49297) % 233280) / 233280;
     out.push({
       ...g,
       id: `${g.id}-${i}`,
       title: lap === 0 ? g.title : `${g.title} ${["II", "III", "IV", "V", "VI", "VII", "VIII", "IX"][lap - 1] ?? lap + 1}`,
-      players: g.players ? Math.max(20, Math.floor(g.players * (0.4 + Math.random()))) : undefined,
+      players: g.players ? Math.max(20, Math.floor(g.players * (0.4 + seed))) : undefined,
     });
   }
   return out;
@@ -69,6 +89,8 @@ export const categoryMap = {
   originals: { label: "GoldenAce Originals", games: expand(originals, 50) },
   tables: { label: "Table Games", games: expand(tableGames, 50) },
   casino: { label: "Featured Casino", games: expand([...slotGames.slice(0, 3), ...originals.slice(0, 3)], 50) },
+  promotions: { label: "Promotions", games: expand(promotionGames, 50) },
+  vip: { label: "VIP Club", games: expand(vipGames, 50) },
 } as const;
 
 export type CategoryId = keyof typeof categoryMap;

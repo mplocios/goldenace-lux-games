@@ -1,12 +1,15 @@
 import { Link } from "@tanstack/react-router";
-import { Flame, Dices, Radio, Sparkles, Spade } from "lucide-react";
+import { Flame, Dices, Radio, Sparkles, Spade, Gift, Trophy, Heart } from "lucide-react";
 
 const pills = [
+  { id: "favorites", label: "Favorites", icon: Heart },
   { id: "casino", label: "Casino", icon: Flame },
   { id: "slots", label: "Slots", icon: Dices },
   { id: "live", label: "Live", icon: Radio },
   { id: "originals", label: "Originals", icon: Sparkles },
   { id: "tables", label: "Tables", icon: Spade },
+  { id: "promotions", label: "Promotions", icon: Gift },
+  { id: "vip", label: "VIP", icon: Trophy },
 ] as const;
 
 export function CategoryPills() {

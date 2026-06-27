@@ -1,4 +1,5 @@
 [run]
-dev = "cd frontend && bun run dev"
-build = "cd frontend && bun run build"
-install = "cd frontend && bun install"
+install = "bun install --cwd frontend"
+dev = "bun --cwd frontend run dev"
+build = "bun --cwd frontend run build"
+"build:dev" = "bun --cwd frontend run build:dev"

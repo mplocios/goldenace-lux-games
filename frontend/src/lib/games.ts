@@ -1,3 +1,4 @@
+import { Home, Flame, Dices, Radio, Sparkles, Spade, Trophy, Heart, Gift } from "lucide-react";
 import type { Game } from "@/components/game-card";
 import pharaoh from "@/assets/game-pharaoh.jpg";
 import dragon from "@/assets/game-dragon.jpg";
@@ -11,6 +12,32 @@ import mines from "@/assets/game-mines.jpg";
 import plinko from "@/assets/game-plinko.jpg";
 import dice from "@/assets/game-dice.jpg";
 import poker from "@/assets/game-poker.jpg";
+
+
+export interface NavItem {
+  label: string;
+  icon: React.ElementType;
+  section: string;
+}
+
+export const browseNav: NavItem[] = [
+  { label: "Home", icon: Home, section: "main" },
+  { label: "Favorites", icon: Heart, section: "favorites" },
+  { label: "Featured", icon: Flame, section: "casino" },
+];
+
+export const categoryNav: NavItem[] = [
+  { label: "Slots", icon: Dices, section: "slots" },
+  { label: "Live Casino", icon: Radio, section: "live" },
+  { label: "Originals", icon: Sparkles, section: "originals" },
+  { label: "Table Games", icon: Spade, section: "tables" },
+];
+
+export const moreNav: NavItem[] = [
+  { label: "Promotions", icon: Gift, section: "promotions" },
+  { label: "VIP Club", icon: Trophy, section: "vip" },
+];
+
 
 export const slotGames: Game[] = [
   { id: "pharaoh", title: "Golden Pharaoh", provider: "Pragmatic", image: pharaoh, tag: "Hot", players: 1842 },

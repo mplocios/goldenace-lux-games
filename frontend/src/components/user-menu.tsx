@@ -39,7 +39,7 @@ export function UserMenu() {
         <DropdownMenuContent align="end" className="w-56 border-gold/30 bg-card">
           <DropdownMenuLabel className="flex flex-col">
             <span className="font-semibold text-foreground">{user.name}</span>
-            <span className="text-xs font-normal text-muted-foreground">{user.id}</span>
+            {user.playerId && <span className="text-xs font-normal text-muted-foreground">{user.playerId}</span>}
             <span className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold text-gold sm:hidden">
               <img src={acecoin} alt="" width={16} height={16} className="h-4 w-4" loading="lazy" />
               {user.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })} AceCoin

@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Mail, Lock, User } from "lucide-react";
+import { Phone, Lock, User, Loader2 } from "lucide-react";
 import logo from "@/assets/goldenace-logo.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
+import { apiRegister } from "@/lib/api";
 
 export const Route = createFileRoute("/register")({
   component: RegisterPage,
@@ -14,18 +15,50 @@ export const Route = createFileRoute("/register")({
 function RegisterPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [mobile, setMobile] = useState("");
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (!mobile.trim()) {
+      setError("Mobile number is required");
+      return;
+    }
+    if (!pw) {
+      setError("Password is required");
+      return;
+    }
+    if (pw !== confirmPw) {
+      setError("Passwords do not match");
+      return;
+    }
+    if (!name.trim()) {
+      setError("Name is required");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const data = await apiRegister(mobile.trim(), pw, name.trim());
+      login(data.user.mobile_number, data.token, data.user);
+      navigate({ to: "/" });
+    } catch (err: any) {
+      setError(err.message || "Registration failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-10">
       <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          login(email || "demo@goldenace.io", name || undefined);
-          navigate({ to: "/" });
-        }}
+        onSubmit={handleSubmit}
         className="w-full max-w-md space-y-5 rounded-2xl border border-gold/30 bg-card p-8 shadow-[var(--shadow-gold)] animate-fade-in"
       >
         <div className="flex flex-col items-center">
@@ -33,18 +66,14 @@ function RegisterPage() {
           <h1 className="mt-3 font-display text-2xl tracking-wider text-gold-gradient">Join GoldenAce</h1>
           <p className="text-sm text-muted-foreground">Create your account to claim your bonus</p>
         </div>
+        {error && (
+          <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm text-destructive">{error}</div>
+        )}
         <div className="space-y-1.5">
-          <Label htmlFor="username" className="text-xs uppercase tracking-wider text-muted-foreground">Username</Label>
+          <Label htmlFor="mobile" className="text-xs uppercase tracking-wider text-muted-foreground">Mobile Number</Label>
           <div className="relative">
-            <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input id="username" value={name} onChange={(e) => setName(e.target.value)} placeholder="highroller_88" className="border-border bg-input pl-10" />
-          </div>
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="email" className="text-xs uppercase tracking-wider text-muted-foreground">Email</Label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="border-border bg-input pl-10" />
+            <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input id="mobile" type="tel" value={mobile} onChange={(e) => setMobile(e.target.value)} placeholder="09xxxxxxxxx" className="border-border bg-input pl-10" />
           </div>
         </div>
         <div className="space-y-1.5">
@@ -54,8 +83,22 @@ function RegisterPage() {
             <Input id="password" type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="••••••••" className="border-border bg-input pl-10" />
           </div>
         </div>
-        <Button type="submit" className="h-11 w-full bg-gold-gradient font-semibold text-primary-foreground shadow-[var(--shadow-gold)] hover:opacity-90">
-          Create Account
+        <div className="space-y-1.5">
+          <Label htmlFor="confirm-password" className="text-xs uppercase tracking-wider text-muted-foreground">Confirm Password</Label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input id="confirm-password" type="password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} placeholder="••••••••" className="border-border bg-input pl-10" />
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="name" className="text-xs uppercase tracking-wider text-muted-foreground">Name</Label>
+          <div className="relative">
+            <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your display name" className="border-border bg-input pl-10" />
+          </div>
+        </div>
+        <Button type="submit" disabled={loading} className="h-11 w-full bg-gold-gradient font-semibold text-primary-foreground shadow-[var(--shadow-gold)] hover:opacity-90">
+          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Create Account"}
         </Button>
         <p className="text-center text-sm text-muted-foreground">
           Already a member? <Link to="/login" className="font-medium text-gold hover:text-gold-bright">Sign in</Link>

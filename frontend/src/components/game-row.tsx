@@ -17,7 +17,7 @@ export function GameRow({ id, title, subtitle, icon, games, categorySlug }: Game
       <div className="flex items-end justify-between gap-4">
         <div className="flex items-center gap-3">
           {icon && (
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold-gradient text-primary-foreground shadow-[var(--shadow-gold)]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold-gradient text-primary-foreground shadow-[var(--shadow-gold)] shimmer-gold">
               {icon}
             </div>
           )}

@@ -14,22 +14,22 @@ export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur-xl lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden"
       aria-label="Mobile navigation"
     >
-      <ul className="mx-auto flex max-w-md items-stretch justify-around px-2 py-2">
+      <ul className="mx-auto flex items-stretch justify-around px-1 py-2">
         {items.map((item) => {
           const isHome = "to" in item;
           const active = isHome ? pathname === "/" : pathname === `/category/${item.category}`;
           const Icon = item.icon;
           const inner = (
             <span
-              className={`flex flex-col items-center gap-1 px-3 py-1 transition-colors ${
+              className={`flex flex-col items-center gap-0.5 px-1.5 py-1 transition-colors ${
                 active ? "text-gold" : "text-muted-foreground hover:text-gold"
               }`}
             >
               <Icon className="h-5 w-5" aria-hidden="true" />
-              <span className="text-[10px] font-medium uppercase tracking-wider">{item.label}</span>
+              <span className="text-[10px] font-medium uppercase tracking-wide">{item.label}</span>
             </span>
           );
           return (

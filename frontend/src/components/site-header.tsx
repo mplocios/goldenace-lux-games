@@ -6,9 +6,21 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/auth";
 import { UserMenu } from "@/components/user-menu";
 
+function HeaderSkeleton() {
+  return (
+    <div className="flex items-center gap-2 sm:gap-3 animate-pulse">
+      <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-border/30 bg-secondary/40 py-1 pl-1 pr-3">
+        <div className="h-5 w-5 rounded-full bg-border/40" />
+        <div className="h-3 w-14 rounded bg-border/40" />
+      </div>
+      <div className="h-10 w-10 rounded-full bg-border/40" />
+    </div>
+  );
+}
+
 export function SiteHeader() {
   const { toggleSidebar } = useSidebar();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
@@ -30,7 +42,9 @@ export function SiteHeader() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          {user ? (
+          {loading ? (
+            <HeaderSkeleton />
+          ) : user ? (
             <>
               <button className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-gold" aria-label="Notifications">
                 <Bell className="h-4 w-4" />

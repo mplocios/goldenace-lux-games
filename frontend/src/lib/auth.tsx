@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { apiCheckLogin } from "@/lib/api";
 
 export type TxKind = "deposit" | "withdraw";
 export interface Transaction {
@@ -16,22 +17,30 @@ export interface GamePlay {
 }
 export interface User {
   id: string;
+  playerId?: string;
   name: string;
   email: string;
+  mobile?: string;
+  token?: string;
+  type?: string;
   balance: number;
+  hasDeposited?: boolean;
   transactions: Transaction[];
   history: GamePlay[];
 }
 
 type AuthCtx = {
   user: User | null;
-  login: (email: string, name?: string) => void;
+  loading: boolean;
+  login: (mobile: string, token?: string, apiUser?: { id: number; playerId?: string; nickname?: string; mobile_number: string; type: string; user_type?: string; balance?: number }) => void;
   logout: () => void;
+  updateName: (name: string) => void;
   adjustBalance: (delta: number, kind: TxKind) => void;
 };
 
 const Ctx = createContext<AuthCtx | null>(null);
 const KEY = "goldenace:user";
+const TOKEN_KEY = "goldenace:token";
 
 function rand(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -67,12 +76,42 @@ function seedDemoUser(email: string, name?: string): User {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(() => !!localStorage.getItem(TOKEN_KEY));
+
+  const checked = useRef(false);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) setUser(JSON.parse(raw));
-    } catch {}
+    if (checked.current) return;
+    checked.current = true;
+
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+      localStorage.removeItem(KEY);
+      setLoading(false);
+      return;
+    }
+
+    apiCheckLogin(token)
+      .then((data) => {
+        setUser({
+          id: String(data.user.id),
+          playerId: data.user.playerId || undefined,
+          name: data.user.nickname || data.user.playerId || data.user.mobile_number,
+          email: "",
+          mobile: data.user.mobile_number,
+          token: data.token,
+          type: data.user.type,
+          balance: data.user.balance ?? 0,
+          transactions: [],
+          history: [],
+        });
+      })
+      .catch(() => {
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(KEY);
+        setUser(null);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -84,14 +123,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value: AuthCtx = {
     user,
-    login: (email, name) => setUser(seedDemoUser(email, name)),
-    logout: () => setUser(null),
+    loading,
+    login: (mobile, token, apiUser) => {
+      if (token && apiUser) {
+        localStorage.setItem(TOKEN_KEY, token);
+        setUser({
+          id: String(apiUser.id),
+          playerId: apiUser.playerId || undefined,
+          name: apiUser.nickname || apiUser.playerId || apiUser.mobile_number,
+          email: "",
+          mobile: apiUser.mobile_number,
+          token,
+          type: apiUser.type,
+          balance: apiUser.balance ?? 0,
+          transactions: [],
+          history: [],
+        });
+      } else {
+        setUser(seedDemoUser(mobile));
+      }
+    },
+    logout: () => {
+      localStorage.removeItem(TOKEN_KEY);
+      setUser(null);
+    },
+    updateName: (name: string) => setUser((u) => u ? { ...u, name } : u),
     adjustBalance: (delta, kind) =>
       setUser((u) =>
         u
           ? {
               ...u,
               balance: Math.max(0, u.balance + delta),
+              hasDeposited: u.hasDeposited || kind === "deposit",
               transactions: [
                 {
                   id: `tx-${Date.now()}`,

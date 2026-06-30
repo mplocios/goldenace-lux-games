@@ -1,4 +1,6 @@
+import { useNavigate } from "@tanstack/react-router";
 import { Play, Heart } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 import { useFavorites } from "@/lib/favorites";
 
 export interface Game {
@@ -12,9 +14,15 @@ export interface Game {
 
 export function GameCard({ game }: { game: Game }) {
   const { isFavorite, toggle } = useFavorites();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const fav = isFavorite(game.id);
   return (
-    <button className="group relative aspect-[3/4] w-full overflow-hidden rounded-lg sm:rounded-xl border border-border/60 bg-card text-left transition-all duration-300 hover:-translate-y-1 hover:border-gold/70 hover:shadow-[var(--shadow-gold)]">
+    <button
+      onClick={() => {
+        if (!user) navigate({ to: "/login" });
+      }}
+      className="group relative aspect-[3/4] w-full overflow-hidden rounded-lg sm:rounded-xl border border-border/60 bg-card text-left transition-all duration-300 hover:-translate-y-1 hover:border-gold/70 hover:glow-gold-pulse">
       <img
         src={game.image}
         alt={game.title}

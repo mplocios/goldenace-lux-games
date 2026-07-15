@@ -1,62 +1,69 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import User from "../../models/User";
 import Wallet from "../../models/Wallet";
+import { Errors, sendError } from "../constant/errors";
+import { errorResponseSchema } from "../constant/errorSchema";
+
+let app: FastifyInstance;
 
 export class RegisterController {
-  static async init(app: FastifyInstance) {
-    app.post(
-      '/register',
-      schema,
-      register
-    );
+  static async init(fastify: FastifyInstance) {
+    app = fastify;
+    fastify.post('/register', schema, register);
   }
 }
 
 async function register(req: FastifyRequest<{ Body: Params }>, res: FastifyReply) {
-  const { mobile } = req.body;
+  const { mobile, password, name } = req.body;
 
   try {
-    let user = await User.findOne({where: {mobile}})
+    let user = await User.findOne({ where: { mobile } });
     if (user) {
-      return res.code(400).send({ message: 'Mobile number already exists' });
+      return sendError(res, Errors.USER_ALREADY_EXISTS);
     }
 
-    const uniqueName = await getUniqueName()
+    const playerId = await getUniqueName();
     user = await User.create({
-      mobile: mobile,
-      name: uniqueName, // Return name-random number
-      type: "player"
-    })
-
-    let payload = {
-      id: user.id,
-      mobile: mobile,
-      name: uniqueName,
-      type: user.type,
-    }
-
-    // console.log("payload", payload)
-    const token = this.jwt.sign(payload, { expiresIn: "24h"} )
+      mobile,
+      password,
+      playerId,
+      nickname: name,
+      type: "player",
+    });
 
     await Wallet.create({
       userId: user.id,
-      credits: 0
-    })
+      credits: 0,
+    });
+
+    const payload = {
+      id: user.id,
+      playerId,
+      nickname: name,
+      user_type: user.type,
+      mobile_number: mobile,
+      type: user.type,
+      balance: 0,
+    };
+
+    const token = app.jwt.sign(payload, { expiresIn: "24h" });
 
     return res.code(200).send({
-      token: token,
-      message: 'Registered' 
+      token,
+      user: payload,
+      message: 'Registered',
     });
   } catch (e) {
-    // console.error(e)
-    return res.code(401).send({ message: 'Error registering' });
+    return sendError(res, Errors.INTERNAL_ERROR);
   }
 }
 
 
 class Params {
-  mobile: string
-};
+  mobile: string;
+  password: string;
+  name: string;
+}
 
 const schema = {
   schema: {
@@ -64,26 +71,34 @@ const schema = {
       type: 'object',
       properties: {
         mobile: { type: 'string' },
+        password: { type: 'string' },
         name: { type: 'string' },
       },
-      required: ['mobile'],
+      required: ['mobile', 'password', 'name'],
     },
     response: {
       200: {
         type: 'object',
         properties: {
           token: { type: 'string' },
+          user: {
+            type: 'object',
+            properties: {
+              id: { type: 'number' },
+              playerId: { type: 'string' },
+              nickname: { type: 'string' },
+              user_type: { type: 'string' },
+              mobile_number: { type: 'string' },
+              type: { type: 'string' },
+              balance: { type: 'number' },
+            },
+          },
           message: { type: 'string' },
         },
-        required: ['token', 'message']
+        required: ['token', 'message'],
       },
-      404: {
-        type: 'object',
-        properties: {
-          message: { type: 'string' },
-        },
-        required: ['message']
-      },
+      400: errorResponseSchema,
+      500: errorResponseSchema,
     },
   },
 };
@@ -99,7 +114,6 @@ async function getUniqueName(): Promise<string> {
         resolve(generatedUserName);
         break;
       }
-      // console.log("Recreate", generatedUserName)
     }
   });
 }

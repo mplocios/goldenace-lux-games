@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Play, Heart } from "lucide-react";
+import { Play, Heart, Gamepad2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useFavorites } from "@/lib/favorites";
 
@@ -17,20 +17,33 @@ export function GameCard({ game }: { game: Game }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const fav = isFavorite(game.id);
+  const hasImage = !!game.image;
+
   return (
     <button
       onClick={() => {
-        if (!user) navigate({ to: "/login" });
+        if (!user) {
+          navigate({ to: "/login" });
+        } else {
+          navigate({ to: "/play/$gameId", params: { gameId: game.id } });
+        }
       }}
       className="group relative aspect-[3/4] w-full overflow-hidden rounded-lg sm:rounded-xl border border-border/60 bg-card text-left transition-all duration-300 hover:-translate-y-1 hover:border-gold/70 hover:glow-gold-pulse">
-      <img
-        src={game.image}
-        alt={game.title}
-        loading="lazy"
-        width={400}
-        height={533}
-        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-      />
+
+      {hasImage ? (
+        <img
+          src={game.image}
+          alt={game.title}
+          loading="lazy"
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+          style={{ width: "100%", height: "100%" }}
+        />
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gold/20 via-card to-background">
+          <Gamepad2 className="h-10 w-10 text-gold/40" />
+        </div>
+      )}
+
       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent opacity-90" />
 
       {game.tag && (

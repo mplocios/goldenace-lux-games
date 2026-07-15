@@ -13,5 +13,5 @@
 		"strict": false,
 	},
 	// "include": ["src/**/*"],
-  "exclude": ["node_modules", "testfiles"]
+  "exclude": ["node_modules", "testfiles", "dist"]
 }

@@ -1,86 +1,107 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import User from "../../models/User";
+import Wallet from "../../models/Wallet";
+import { Errors, sendError } from "../constant/errors";
+import { errorResponseSchema } from "../constant/errorSchema";
+
+let app: FastifyInstance;
 
 export class LoginController {
-  static async init(app: FastifyInstance) {
-    app.post('/login', schema, login);
-    app.post('/checklogin', checkLoginSchema, checkLogin);
+  static async init(fastify: FastifyInstance) {
+    app = fastify;
+    fastify.post('/login', schema, login);
+    fastify.post('/checklogin', checkLoginSchema, checkLogin);
+    fastify.post('/nickname', nicknameSchema, updateNickname);
   }
 }
 
-const jwtSecret = process.env.JWT_SECRET_KEY || 'ToTheMoon__69420';
-
 async function login(req: FastifyRequest<{ Body: LoginParams }>, res: FastifyReply) {
-  const { mobile } = req.body;
+  const { mobile, password } = req.body;
 
-  // console.log("login", mobile)
-  let user = await User.findOne({where: {mobile}})
-  if (user) {
-    let payload = {
-      id: user.id,
-      user_type_id: 0,
-      mobile_number: mobile,
-      type: user.type
-    }
-    const token = this.jwt.sign(payload, { expiresIn: "24h"} )
-    return res.code(200).send({ 
-      token: token,
-      user: payload
-    });
+  let user = await User.findOne({ where: { mobile, password } });
+  if (!user) {
+    return sendError(res, Errors.USER_INVALID_CREDENTIALS);
   }
 
-  return res.code(404).send({ message: "User not found" });
+  const wallet = await Wallet.findOne({ where: { userId: user.id } });
+  let payload = {
+    id: user.id,
+    playerId: user.playerId || "",
+    nickname: user.nickname || "",
+    user_type: user.type,
+    mobile_number: mobile,
+    type: user.type,
+    balance: wallet ? parseFloat(wallet.credits) || 0 : 0,
+  };
+  const token = app.jwt.sign(payload, { expiresIn: "24h" });
+  return res.code(200).send({
+    token: token,
+    user: payload
+  });
 }
 
 async function checkLogin(req: FastifyRequest, res: FastifyReply) {
-	try{
-		const authHeader = req.headers['authorization'];
-		if (!authHeader || !authHeader.startsWith('Bearer ')) {
-			return res.code(401).send({ message: 'Authorization token missing or invalid' });
-		}
-		const token = authHeader.split(' ')[1];
+  try {
+    const authHeader = req.headers['authorization'];
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return sendError(res, Errors.AUTH_TOKEN_MISSING);
+    }
+    const token = authHeader.split(' ')[1];
 
     if (!token || token === "undefined") {
-      return res.code(401).send({ message: "Token is null" });
+      return sendError(res, Errors.AUTH_TOKEN_INVALID);
     }
 
-    const user : any = await new Promise((resolve, reject) => {
-      this.jwt.verify(token, jwtSecret, (err, user) => {
-        if (err) {
-          reject(new Error("Token is invalid or expired."));
-        } else {
-          resolve(user);
-        }
-      });
-    });
- 
-    let getUser = await User.findOne({where: {mobile: user.mobile_number}})
-    
-    
-		if (getUser) {
+    const decoded: any = app.jwt.verify(token);
 
-      const data= {
-				token: token,
-				user: {
-          id : getUser.id,
-          mobile_number : getUser.mobile,
-          type : getUser.type   
-        }
-			}
+    let getUser = await User.findOne({ where: { mobile: decoded.mobile_number } });
+    if (!getUser) {
+      return sendError(res, Errors.USER_NOT_FOUND);
+    }
 
-			return res.code(200).send(data);
-		}
-	
-		return res.code(404).send({ message: "User not found" });
-	}catch(e){
-    // console.log(e)
-    return res.code(401).send({ message: "Unknown Error" });
-	}
+    const wallet = await Wallet.findOne({ where: { userId: getUser.id } });
+    const data = {
+      token: token,
+      user: {
+        id: getUser.id,
+        playerId: getUser.playerId || "",
+        nickname: getUser.nickname || "",
+        mobile_number: getUser.mobile,
+        type: getUser.type,
+        balance: wallet ? parseFloat(wallet.credits) || 0 : 0,
+      }
+    };
+
+    return res.code(200).send(data);
+  } catch (e) {
+    return sendError(res, Errors.AUTH_TOKEN_EXPIRED);
+  }
+}
+
+async function updateNickname(req: FastifyRequest<{ Body: { nickname: string } }>, res: FastifyReply) {
+  try {
+    const authHeader = req.headers['authorization'];
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return sendError(res, Errors.AUTH_TOKEN_MISSING);
+    }
+    const token = authHeader.split(' ')[1];
+    const decoded: any = app.jwt.verify(token);
+
+    const user = await User.findByPk(decoded.id);
+    if (!user) return sendError(res, Errors.USER_NOT_FOUND);
+
+    await user.update({ nickname: req.body.nickname });
+
+    return res.code(200).send({ message: 'Nickname updated', nickname: req.body.nickname });
+  } catch (e) {
+    return sendError(res, Errors.AUTH_TOKEN_EXPIRED);
+  }
 }
 
 
 class LoginParams {
   mobile: string
+  password: any
 };
 
 const schema = {
@@ -90,25 +111,23 @@ const schema = {
         type: 'object',
         properties: {
           token: { type: 'string' },
-          user: { 
+          user: {
             type: 'object',
             properties: {
               id: { type: 'number' },
-              mobile: { type: 'string' },
-              name: { type: 'string' },
+              playerId: { type: 'string' },
+              nickname: { type: 'string' },
+              user_type: { type: 'string' },
+              mobile_number: { type: 'string' },
               type: { type: 'string' },
+              balance: { type: 'number' },
             }
           },
         },
         required: ['token', 'user']
       },
-      404: {
-        type: 'object',
-        properties: {
-          message: { type: 'string' },
-        },
-        required: ['message']
-      },
+      401: errorResponseSchema,
+      404: errorResponseSchema,
     },
   },
 };
@@ -120,23 +139,44 @@ const checkLoginSchema = {
         type: 'object',
         properties: {
           token: { type: 'string' },
-          user: { 
+          user: {
             type: 'object',
             properties: {
               id: { type: 'number' },
+              playerId: { type: 'string' },
+              nickname: { type: 'string' },
               mobile_number: { type: 'string' },
               type: { type: 'string' },
+              balance: { type: 'number' },
             }
           },
         },
       },
-      404: {
+      401: errorResponseSchema,
+      404: errorResponseSchema,
+    },
+  },
+};
+
+const nicknameSchema = {
+  schema: {
+    body: {
+      type: 'object',
+      properties: {
+        nickname: { type: 'string' },
+      },
+      required: ['nickname'],
+    },
+    response: {
+      200: {
         type: 'object',
         properties: {
           message: { type: 'string' },
+          nickname: { type: 'string' },
         },
-        required: ['message']
       },
+      401: errorResponseSchema,
+      404: errorResponseSchema,
     },
   },
 };

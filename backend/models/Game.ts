@@ -3,7 +3,7 @@ import { sequelize } from '../database/Database';
 
 class Game extends Model {
   public id!: number;
-  public uuid!: string; // New UUID field
+  public uuid!: string;
   public gameName!: string;
   public image!: string;
   public type!: string;
@@ -18,6 +18,10 @@ class Game extends Model {
   public description?: string;
   public isActivate?: boolean;
   public url?: string;
+  public rtp?: number;
+  public volatility?: string;
+  public source?: string;
+  public thumbnail?: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -89,6 +93,23 @@ Game.init(
       allowNull: true,
     },
     url: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    rtp: {
+      type: DataTypes.FLOAT,
+      allowNull: true,
+    },
+    volatility: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    source: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: 'slotegrator',
+    },
+    thumbnail: {
       type: DataTypes.STRING,
       allowNull: true,
     },

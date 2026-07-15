@@ -1,5 +1,0 @@
-[run]
-install = "bun install --cwd frontend"
-dev = "bun --cwd frontend run dev"
-build = "bun --cwd frontend run build"
-"build:dev" = "bun --cwd frontend run build:dev"

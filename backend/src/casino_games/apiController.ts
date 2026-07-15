@@ -59,11 +59,7 @@ class ApiController {
       if (type) queryOptions.where.type = type;
       if (is_active !== undefined) queryOptions.where.is_active = Boolean(is_active);
       if (is_mobile !== undefined) queryOptions.where.is_mobile = Boolean(is_mobile);
-      
-      queryOptions.where.image = {
-        [Op.ne]: null   
-      };
- 
+
       return await Game.findAll(queryOptions);
  
     } catch (e) {
@@ -387,11 +383,7 @@ class ApiController {
       if (provider) queryOptions.where.provider = provider;
       if (type) queryOptions.where.type = type;
       if (is_mobile !== undefined) queryOptions.where.is_mobile = Boolean(is_mobile);
-  
-      queryOptions.where.image = {
-        [Op.ne]: null   
-      };
- 
+
       const totalCount = await Game.count(queryOptions);
 
       return { totalCount };

@@ -1,16 +1,16 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft, ChevronLeft, ChevronRight, Heart } from "lucide-react";
-import { GameCard, type Game } from "@/components/game-card";
-import { categoryMap, type CategoryId } from "@/lib/games";
+import { GameCard } from "@/components/game-card";
+import { isValidCategory, categoryLabels, type CategoryId } from "@/lib/games";
 import { Button } from "@/components/ui/button";
 import { useFavorites } from "@/lib/favorites";
 import { GameCardSkeleton } from "@/components/game-skeleton";
+import { useCategoryGames, useGames } from "@/lib/use-games";
 
 const PAGE_SIZE = 50;
 
-const isCategoryId = (s: string): s is CategoryId => s in categoryMap;
-const isValid = (s: string) => s === "favorites" || isCategoryId(s);
+const isValid = (s: string) => s === "favorites" || isValidCategory(s);
 
 export const Route = createFileRoute("/category/$category")({
   loader: ({ params }) => {
@@ -32,9 +32,14 @@ function CategoryPage() {
   const { ids } = useFavorites();
   const isFav = slug === "favorites";
 
-  const allGames: Game[] = isFav
-    ? Object.values(categoryMap).flatMap((c) => c.games)
-    : categoryMap[slug as CategoryId].games;
+  const { games: categoryGames, loading: catLoading } = useCategoryGames(
+    isFav ? "casino" : slug,
+    500,
+  );
+  const { allGames, loading: allLoading } = useGames(50);
+
+  const loading = isFav ? allLoading : catLoading;
+
   const games = isFav
     ? (() => {
         const seen = new Set<string>();
@@ -44,16 +49,11 @@ function CategoryPage() {
           return true;
         });
       })()
-    : allGames;
-  const label = isFav ? "Your Favorites" : categoryMap[slug as CategoryId].label;
+    : categoryGames;
+
+  const label = isFav ? "Your Favorites" : (categoryLabels[slug as CategoryId] || slug);
 
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    setLoading(true);
-    const t = setTimeout(() => setLoading(false), 350);
-    return () => clearTimeout(t);
-  }, [slug, page]);
 
   const totalPages = Math.max(1, Math.ceil(games.length / PAGE_SIZE));
   const start = (page - 1) * PAGE_SIZE;
@@ -95,27 +95,29 @@ function CategoryPage() {
         </div>
       )}
 
-      <div className="mt-8 flex items-center justify-center gap-2">
-        <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="border-gold/40">
-          <ChevronLeft className="h-4 w-4" /> Prev
-        </Button>
-        {Array.from({ length: totalPages }).map((_, i) => (
-          <button
-            key={i}
-            onClick={() => setPage(i + 1)}
-            aria-label={`Go to page ${i + 1}`}
-            aria-current={page === i + 1 ? "page" : undefined}
-            className={`h-9 w-9 rounded-md text-sm font-medium transition-colors ${
-              page === i + 1 ? "bg-gold-gradient text-primary-foreground" : "border border-border/60 text-foreground hover:border-gold hover:text-gold"
-            }`}
-          >
-            {i + 1}
-          </button>
-        ))}
-        <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="border-gold/40">
-          Next <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
+      {!loading && totalPages > 1 && (
+        <div className="mt-8 flex items-center justify-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="border-gold/40">
+            <ChevronLeft className="h-4 w-4" /> Prev
+          </Button>
+          {Array.from({ length: Math.min(totalPages, 10) }).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setPage(i + 1)}
+              aria-label={`Go to page ${i + 1}`}
+              aria-current={page === i + 1 ? "page" : undefined}
+              className={`h-9 w-9 rounded-md text-sm font-medium transition-colors ${
+                page === i + 1 ? "bg-gold-gradient text-primary-foreground" : "border border-border/60 text-foreground hover:border-gold hover:text-gold"
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+          <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="border-gold/40">
+            Next <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
     </main>
   );
 }

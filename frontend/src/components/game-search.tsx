@@ -1,21 +1,38 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, X } from "lucide-react";
 import { GameCard, type Game } from "@/components/game-card";
-import { slotGames, liveGames, originals, tableGames } from "@/lib/games";
+import { apiGetGames, type DbGame } from "@/lib/api";
 
-const ALL: Game[] = [...slotGames, ...liveGames, ...originals, ...tableGames];
+function mapDbGame(g: DbGame): Game {
+  return {
+    id: g.uuid,
+    title: g.name,
+    provider: g.provider,
+    image: g.thumbnail || g.image || "",
+    tag: g.volatility === "high" ? "Hot" : g.type === "live" ? "Live" : undefined,
+  };
+}
 
 export function GameSearch() {
   const [q, setQ] = useState("");
+  const [allGames, setAllGames] = useState<Game[]>([]);
+
+  useEffect(() => {
+    apiGetGames({ limit: 200 }).then((data) => {
+      setAllGames(data.map(mapDbGame));
+    });
+  }, []);
 
   const results = useMemo(() => {
     const term = q.trim().toLowerCase();
     if (!term) return [];
-    return ALL.filter(
-      (g) =>
-        g.title.toLowerCase().includes(term) || g.provider.toLowerCase().includes(term),
-    ).slice(0, 12);
-  }, [q]);
+    return allGames
+      .filter(
+        (g) =>
+          g.title.toLowerCase().includes(term) || g.provider.toLowerCase().includes(term),
+      )
+      .slice(0, 12);
+  }, [q, allGames]);
 
   return (
     <section className="space-y-4">

@@ -15,6 +15,7 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PlayGameIdRouteImport } from './routes/play.$gameId'
 import { Route as CategoryCategoryRouteImport } from './routes/category.$category'
 
 const WalletRoute = WalletRouteImport.update({
@@ -47,6 +48,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlayGameIdRoute = PlayGameIdRouteImport.update({
+  id: '/play/$gameId',
+  path: '/play/$gameId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CategoryCategoryRoute = CategoryCategoryRouteImport.update({
   id: '/category/$category',
   path: '/category/$category',
@@ -61,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/wallet': typeof WalletRoute
   '/category/$category': typeof CategoryCategoryRoute
+  '/play/$gameId': typeof PlayGameIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +77,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/wallet': typeof WalletRoute
   '/category/$category': typeof CategoryCategoryRoute
+  '/play/$gameId': typeof PlayGameIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/wallet': typeof WalletRoute
   '/category/$category': typeof CategoryCategoryRoute
+  '/play/$gameId': typeof PlayGameIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +100,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/wallet'
     | '/category/$category'
+    | '/play/$gameId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/wallet'
     | '/category/$category'
+    | '/play/$gameId'
   id:
     | '__root__'
     | '/'
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/wallet'
     | '/category/$category'
+    | '/play/$gameId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -119,6 +131,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   WalletRoute: typeof WalletRoute
   CategoryCategoryRoute: typeof CategoryCategoryRoute
+  PlayGameIdRoute: typeof PlayGameIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -165,6 +178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/play/$gameId': {
+      id: '/play/$gameId'
+      path: '/play/$gameId'
+      fullPath: '/play/$gameId'
+      preLoaderRoute: typeof PlayGameIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/category/$category': {
       id: '/category/$category'
       path: '/category/$category'
@@ -183,6 +203,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   WalletRoute: WalletRoute,
   CategoryCategoryRoute: CategoryCategoryRoute,
+  PlayGameIdRoute: PlayGameIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

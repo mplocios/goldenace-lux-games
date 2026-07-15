@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 export interface LoginResponse {
   token: string;
@@ -59,6 +59,59 @@ export async function apiRegister(mobile: string, password: string, name: string
   }
 
   return res.json();
+}
+
+export interface DbGame {
+  id: number;
+  uuid: string;
+  name: string;
+  image: string | null;
+  type: string;
+  provider: string;
+  technology: string;
+  has_lobby: boolean;
+  is_mobile: boolean;
+  has_freespins: boolean;
+  has_tables: boolean;
+  label: string | null;
+  rtp: number | null;
+  volatility: string | null;
+  source: string | null;
+  thumbnail: string | null;
+  is_active: boolean;
+}
+
+export async function apiGetGames(params: {
+  type?: string;
+  provider?: string;
+  limit?: number;
+  offset?: number;
+  is_active?: boolean;
+} = {}): Promise<DbGame[]> {
+  const query = new URLSearchParams();
+  if (params.type) query.set("type", params.type);
+  if (params.provider) query.set("provider", params.provider);
+  if (params.limit) query.set("limit", String(params.limit));
+  if (params.offset) query.set("offset", String(params.offset));
+  if (params.is_active !== undefined) query.set("is_active", String(params.is_active));
+
+  const res = await fetch(`${API_URL}/api/games?${query.toString()}`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export async function apiCountGames(params: {
+  type?: string;
+  provider?: string;
+} = {}): Promise<number> {
+  const query = new URLSearchParams();
+  if (params.type) query.set("type", params.type);
+  if (params.provider) query.set("provider", params.provider);
+
+  const res = await fetch(`${API_URL}/api/coutGames?${query.toString()}`);
+  if (!res.ok) return 0;
+  const data = await res.json();
+  return data.totalCount || 0;
 }
 
 export async function apiCheckLogin(token: string): Promise<LoginResponse> {

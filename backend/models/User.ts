@@ -17,9 +17,12 @@ import Transaction from "./Transaction";
 class User extends Model {
   id: any;
   mobile: string;
+  password: string;
   name: string;
+  nickname: string;
   type: string;
-  
+  playerId: string;
+
   static modelInit(sequelize: Sequelize) {
     User.init(
       {
@@ -29,16 +32,28 @@ class User extends Model {
           primaryKey: true,
           allowNull: false,
         },
+        playerId: {
+          type: DataTypes.STRING,
+          allowNull: true,
+        },
         mobile: {
           type: DataTypes.STRING,
           allowNull: false,
-          unique: true
+          unique: true,
+        },
+        password: {
+          type: DataTypes.STRING,
+          allowNull: false,
         },
         type: {
           type: DataTypes.STRING,
           allowNull: false,
         },
         name: {
+          type: DataTypes.STRING,
+          allowNull: true,
+        },
+        nickname: {
           type: DataTypes.STRING,
           allowNull: true,
         },

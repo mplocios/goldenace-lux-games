@@ -1,11 +1,9 @@
-import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Flame, Dices, Radio, Sparkles, Spade, Heart, Gift, Trophy } from "lucide-react";
+import { Flame, Dices, Radio, Sparkles, Spade, Heart, Zap, CircleDot } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { BottomNav } from "@/components/bottom-nav";
 import { Hero } from "@/components/hero";
 import { GameRow } from "@/components/game-row";
-import { categoryMap } from "@/lib/games";
 import { GameSearch } from "@/components/game-search";
 import { CategoryPills } from "@/components/category-pills";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
@@ -17,6 +15,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { GoldParticles } from "@/components/gold-particles";
 import { OrnamentDivider } from "@/components/ornament-divider";
 import { ProviderMarquee } from "@/components/provider-marquee";
+import { useGames } from "@/lib/use-games";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -24,13 +23,8 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const { ids } = useFavorites();
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 400);
-    return () => clearTimeout(t);
-  }, []);
+  const { categories, allGames, loading } = useGames(10);
 
-  const allGames = Object.values(categoryMap).flatMap((c) => c.games);
   const seen = new Set<string>();
   const favoriteGames = allGames.filter((g) => {
     if (!ids.includes(g.id) || seen.has(g.id)) return false;
@@ -88,7 +82,7 @@ function Index() {
                   title="Featured Casino"
                   subtitle="Hand-picked games trending right now"
                   icon={<Flame className="h-5 w-5" />}
-                  games={categoryMap.casino.games.slice(0, 10)}
+                  games={categories.casino.slice(0, 10)}
                   categorySlug="casino"
                 />
               </div>
@@ -98,7 +92,7 @@ function Index() {
                 title="Slot Games"
                 subtitle="Spin the reels on the world's biggest slots"
                 icon={<Dices className="h-5 w-5" />}
-                games={categoryMap.slots.games.slice(0, 10)}
+                games={categories.slots.slice(0, 10)}
                 categorySlug="slots"
               />
               <OrnamentDivider />
@@ -107,7 +101,7 @@ function Index() {
                 title="Live Casino"
                 subtitle="Real dealers, real time, real winnings"
                 icon={<Radio className="h-5 w-5" />}
-                games={categoryMap.live.games.slice(0, 10)}
+                games={categories.live.slice(0, 10)}
                 categorySlug="live"
               />
               <OrnamentDivider />
@@ -116,7 +110,7 @@ function Index() {
                 title="GoldenAce Originals"
                 subtitle="Exclusive in-house games you won't find anywhere else"
                 icon={<Sparkles className="h-5 w-5" />}
-                games={categoryMap.originals.games.slice(0, 10)}
+                games={categories.originals.slice(0, 10)}
                 categorySlug="originals"
               />
               <OrnamentDivider />
@@ -125,27 +119,35 @@ function Index() {
                 title="Table Games"
                 subtitle="The classics — blackjack, roulette, baccarat & more"
                 icon={<Spade className="h-5 w-5" />}
-                games={categoryMap.tables.games.slice(0, 10)}
+                games={categories.tables.slice(0, 10)}
                 categorySlug="tables"
               />
-              <OrnamentDivider />
-              <GameRow
-                id="promotions"
-                title="Promotions"
-                subtitle="Bonuses, free spins and limited-time events"
-                icon={<Gift className="h-5 w-5" />}
-                games={categoryMap.promotions.games.slice(0, 10)}
-                categorySlug="promotions"
-              />
-              <OrnamentDivider />
-              <GameRow
-                id="vip"
-                title="VIP Club"
-                subtitle="Elite tables and exclusive winning suites"
-                icon={<Trophy className="h-5 w-5" />}
-                games={categoryMap.vip.games.slice(0, 10)}
-                categorySlug="vip"
-              />
+              {categories.crash.length > 0 && (
+                <>
+                  <OrnamentDivider />
+                  <GameRow
+                    id="crash"
+                    title="Crash & Instant"
+                    subtitle="Fast-paced games with instant results"
+                    icon={<Zap className="h-5 w-5" />}
+                    games={categories.crash.slice(0, 10)}
+                    categorySlug="crash"
+                  />
+                </>
+              )}
+              {categories.bingo.length > 0 && (
+                <>
+                  <OrnamentDivider />
+                  <GameRow
+                    id="bingo"
+                    title="Bingo"
+                    subtitle="Classic bingo games with exciting prizes"
+                    icon={<CircleDot className="h-5 w-5" />}
+                    games={categories.bingo.slice(0, 10)}
+                    categorySlug="bingo"
+                  />
+                </>
+              )}
             </>
           )}
           <div className="mt-12">

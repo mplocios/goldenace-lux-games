@@ -1,10 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Outlet, Link, createRootRouteWithContext, useRouter } from "@tanstack/react-router";
+import { Outlet, Link, Navigate, createRootRouteWithContext, useRouter } from "@tanstack/react-router";
 import { useEffect } from "react";
 
 import faviconUrl from "../assets/ace-mini-icon.png";
 import { FavoritesProvider } from "../lib/favorites";
-import { AuthProvider } from "../lib/auth";
+import { AuthProvider, useAuth } from "../lib/auth";
 
 function NotFoundComponent() {
   return (
@@ -69,6 +69,36 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+const PUBLIC_ROUTES = ["/login", "/register"];
+
+function RouteGuard() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const path = router.state.location.pathname;
+
+  const isPublic = PUBLIC_ROUTES.some((r) => path === r);
+  const isAdminRoute = path.startsWith("/admin");
+
+  if (loading && !isPublic) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gold border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (user) {
+    if (user.type === "admin" && !isAdminRoute && !isPublic) {
+      return <Navigate to="/admin" />;
+    }
+    if (user.type !== "admin" && isAdminRoute) {
+      return <Navigate to="/" />;
+    }
+  }
+
+  return <Outlet />;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
@@ -89,7 +119,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <FavoritesProvider>
-          <Outlet />
+          <RouteGuard />
         </FavoritesProvider>
       </AuthProvider>
     </QueryClientProvider>

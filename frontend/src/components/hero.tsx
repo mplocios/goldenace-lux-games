@@ -59,16 +59,16 @@ export function Hero() {
       <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-background/10" />
       <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent" />
 
-      <div className="relative grid gap-6 px-6 py-12 sm:px-10 sm:py-16 md:py-24 lg:px-14">
+      <div className="relative grid gap-4 px-5 py-6 sm:gap-6 sm:px-10 sm:py-16 md:py-24 lg:px-14">
         <div className="inline-flex w-fit items-center gap-2 rounded-full border border-gold/40 bg-background/60 px-3 py-1 text-xs font-medium uppercase tracking-wider text-gold backdrop-blur">
           <Sparkles className="h-3.5 w-3.5" />
           Welcome Offer
         </div>
-        <h1 className="max-w-2xl font-display text-4xl font-bold leading-tight tracking-tight text-foreground sm:text-5xl md:text-6xl">
+        <h1 className="max-w-2xl font-display text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-5xl md:text-6xl">
           Where Fortune <br />
           <span className="text-gold-gradient shimmer-gold">Meets Winning</span>
         </h1>
-        <p className="max-w-xl text-base text-muted-foreground sm:text-lg">
+        <p className="max-w-xl text-sm text-muted-foreground sm:text-lg">
           Step into the winner's circle. Your first deposit is{" "}
           <span className="font-semibold text-gold">doubled</span> — get up to{" "}
           <span className="inline-flex items-center gap-1 font-semibold text-gold"><img src={acecoin} alt="" width={18} height={18} className="inline h-[18px] w-[18px]" />40,000 AceCoin</span> from a single deposit.
@@ -92,7 +92,7 @@ export function Hero() {
           </Button>
         </div>
 
-        <dl className="mt-4 grid max-w-xl grid-cols-3 gap-4 border-t border-border/60 pt-6">
+        <dl className="mt-2 grid max-w-xl grid-cols-3 gap-4 border-t border-border/60 pt-4 sm:mt-4 sm:pt-6">
           <AnimatedStat target={2400000} label="Jackpot" icon={acecoin} />
           <AnimatedStat target={12840} label="Live players" />
           <AnimatedStat target={3500} suffix="+" label="Games" />

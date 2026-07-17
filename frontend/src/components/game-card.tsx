@@ -85,7 +85,7 @@ export function GameCard({ game }: { game: Game }) {
         )}
       </div>
 
-      <div className="absolute inset-0 flex items-center justify-center bg-background/60 opacity-0 backdrop-blur-sm transition-opacity duration-300 group-hover:opacity-100">
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/60 opacity-0 backdrop-blur-sm transition-opacity duration-300 group-hover:opacity-100">
         <div className="flex h-10 w-10 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-gold-gradient shadow-[var(--shadow-gold)]">
           <Play className="ml-0.5 h-4 w-4 sm:h-6 sm:w-6 fill-primary-foreground text-primary-foreground" />
         </div>

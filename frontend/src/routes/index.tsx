@@ -1,10 +1,10 @@
+import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Flame, Dices, Radio, Sparkles, Spade, Heart, Zap, CircleDot } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { BottomNav } from "@/components/bottom-nav";
 import { Hero } from "@/components/hero";
 import { GameRow } from "@/components/game-row";
-import { GameSearch } from "@/components/game-search";
 import { CategoryPills } from "@/components/category-pills";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -16,6 +16,8 @@ import { GoldParticles } from "@/components/gold-particles";
 import { OrnamentDivider } from "@/components/ornament-divider";
 import { ProviderMarquee } from "@/components/provider-marquee";
 import { useGames } from "@/lib/use-games";
+import { apiGetGames } from "@/lib/api";
+import type { Game } from "@/components/game-card";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -23,14 +25,24 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const { ids } = useFavorites();
-  const { categories, allGames, loading } = useGames(10);
+  const { categories, loading } = useGames(10);
 
-  const seen = new Set<string>();
-  const favoriteGames = allGames.filter((g) => {
-    if (!ids.includes(g.id) || seen.has(g.id)) return false;
-    seen.add(g.id);
-    return true;
-  });
+  const [favoriteGames, setFavoriteGames] = useState<Game[]>([]);
+  useEffect(() => {
+    if (ids.length === 0) { setFavoriteGames([]); return; }
+    apiGetGames({ uuids: ids.join(",") })
+      .then((dbGames) =>
+        setFavoriteGames(
+          dbGames.map((g) => ({
+            id: g.uuid,
+            title: g.name,
+            provider: g.provider,
+            image: g.thumbnail || g.image || "",
+          })),
+        ),
+      )
+      .catch(() => {});
+  }, [ids.join(",")]);
 
   return (
     <SidebarProvider>
@@ -47,9 +59,8 @@ function Index() {
 
           <OrnamentDivider />
 
-          <div className="mt-8 space-y-4">
+          <div className="mt-8">
             <CategoryPills />
-            <GameSearch />
           </div>
 
           {loading ? (

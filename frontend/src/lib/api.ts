@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const API_URL = import.meta.env.VITE_API_URL ?? "";
 
 export interface LoginResponse {
   token: string;
@@ -10,6 +10,8 @@ export interface LoginResponse {
     mobile_number: string;
     type: string;
     balance: number;
+    withdrawable: number;
+    hasDeposited: boolean;
   };
 }
 
@@ -87,6 +89,8 @@ export async function apiGetGames(params: {
   limit?: number;
   offset?: number;
   is_active?: boolean;
+  q?: string;
+  uuids?: string;
 } = {}): Promise<DbGame[]> {
   const query = new URLSearchParams();
   if (params.type) query.set("type", params.type);
@@ -94,6 +98,8 @@ export async function apiGetGames(params: {
   if (params.limit) query.set("limit", String(params.limit));
   if (params.offset) query.set("offset", String(params.offset));
   if (params.is_active !== undefined) query.set("is_active", String(params.is_active));
+  if (params.q) query.set("q", params.q);
+  if (params.uuids) query.set("uuids", params.uuids);
 
   const res = await fetch(`${API_URL}/api/games?${query.toString()}`);
   if (!res.ok) return [];
@@ -126,5 +132,143 @@ export async function apiCheckLogin(token: string): Promise<LoginResponse> {
     throw new Error("Session expired");
   }
 
+  return res.json();
+}
+
+export async function apiFetchFavorites(token: string): Promise<string[]> {
+  const res = await fetch(`${API_URL}/api/users/favorites`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export async function apiAddFavorite(token: string, gameUuid: string): Promise<void> {
+  await fetch(`${API_URL}/api/users/favorites`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ gameUuid }),
+  });
+}
+
+export async function apiRemoveFavorite(token: string, gameUuid: string): Promise<void> {
+  await fetch(`${API_URL}/api/users/favorites/${encodeURIComponent(gameUuid)}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function apiCashIn(
+  token: string,
+  opts: { price: number; coins: number; paymentType: string },
+): Promise<{ paymentUrl: string; transactionId: number; status: string }> {
+  const res = await fetch(`${API_URL}/api/payments/cashin`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(opts),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: "Deposit failed" }));
+    throw new Error(err.message || err.error || "Deposit failed");
+  }
+  return res.json();
+}
+
+export async function apiCashOut(
+  token: string,
+  opts: { amount: number; bankCode: string; accountNo: string; firstName: string; middleName: string; lastName: string },
+): Promise<{ message: string; transactionId: number; status: string }> {
+  const res = await fetch(`${API_URL}/api/payments/cashout`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(opts),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: "Withdraw failed" }));
+    throw new Error(err.message || err.error || "Withdraw failed");
+  }
+  return res.json();
+}
+
+export async function apiDeposit(token: string, amount: number): Promise<{ balance: number; withdrawable: number }> {
+  const res = await fetch(`${API_URL}/api/users/deposit`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ amount }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: "Deposit failed" }));
+    throw new Error(err.message || "Deposit failed");
+  }
+  return res.json();
+}
+
+export async function apiWithdraw(token: string, amount: number): Promise<{ balance: number; withdrawable: number }> {
+  const res = await fetch(`${API_URL}/api/users/withdraw`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ amount }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: "Withdraw failed" }));
+    throw new Error(err.message || "Withdraw failed");
+  }
+  return res.json();
+}
+
+export interface TransactionRecord {
+  id: number;
+  source: "game" | "payment";
+  event: string;
+  turnover: number | null;
+  payout: number | null;
+  amount: number;
+  previousBalance: number;
+  newBalance: number;
+  gameName: string | null;
+  provider: string | null;
+  date: string;
+}
+
+export interface TransactionHistoryResponse {
+  data: TransactionRecord[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export async function apiGetTransactionHistory(
+  token: string,
+  opts: { limit?: number; offset?: number; source?: "game" | "payment" } = {},
+): Promise<TransactionHistoryResponse> {
+  const res = await fetch(`${API_URL}/api/users/transactionHistory`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      limit: opts.limit ?? 10,
+      offset: opts.offset ?? 0,
+      source: opts.source,
+    }),
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch transaction history");
   return res.json();
 }

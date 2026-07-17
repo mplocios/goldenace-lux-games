@@ -1,8 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import User from "../../models/User";
 import Transaction from "../../models/Transaction";
-import { generateRandomString,DateToday } from "../utils/common";
-import { generateSignature } from "../utils/sigepaySigniture";
 import Wallet from "../../models/Wallet";
 import axios from "axios";
 import WebSocketService from "../services/WebSocketService";
@@ -105,7 +103,8 @@ async function processDeposit(transaction){
   WebSocketService.sendToClient(`${wallet.userId}`, {
     channel:  "/CreditUpdate",
     data: {
-      credits: wallet.credits,  // Send the updated credits
+      credits: wallet.credits,
+      withdrawable: parseFloat(wallet.withdrawable) || 0,
       message: "Your credits have been updated successfully.",
       status: 'success'
     }

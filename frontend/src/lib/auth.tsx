@@ -24,6 +24,7 @@ export interface User {
   token?: string;
   type?: string;
   balance: number;
+  withdrawable: number;
   hasDeposited?: boolean;
   transactions: Transaction[];
   history: GamePlay[];
@@ -35,7 +36,7 @@ type AuthCtx = {
   login: (mobile: string, token?: string, apiUser?: { id: number; playerId?: string; nickname?: string; mobile_number: string; type: string; user_type?: string; balance?: number }) => void;
   logout: () => void;
   updateName: (name: string) => void;
-  adjustBalance: (delta: number, kind: TxKind) => void;
+  adjustBalance: (delta: number, kind: TxKind, withdrawable?: number) => void;
 };
 
 const Ctx = createContext<AuthCtx | null>(null);
@@ -69,6 +70,7 @@ function seedDemoUser(email: string, name?: string): User {
     name: name || email.split("@")[0] || "Player",
     email,
     balance: 1250,
+    withdrawable: 0,
     transactions: txs,
     history,
   };
@@ -102,6 +104,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           token: data.token,
           type: data.user.type,
           balance: data.user.balance ?? 0,
+          withdrawable: data.user.withdrawable ?? 0,
+          hasDeposited: data.user.hasDeposited ?? false,
           transactions: [],
           history: [],
         });
@@ -136,6 +140,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           token,
           type: apiUser.type,
           balance: apiUser.balance ?? 0,
+          withdrawable: (apiUser as any).withdrawable ?? 0,
+          hasDeposited: (apiUser as any).hasDeposited ?? false,
           transactions: [],
           history: [],
         });
@@ -148,12 +154,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
     },
     updateName: (name: string) => setUser((u) => u ? { ...u, name } : u),
-    adjustBalance: (delta, kind) =>
+    adjustBalance: (delta, kind, newWithdrawable) =>
       setUser((u) =>
         u
           ? {
               ...u,
               balance: Math.max(0, u.balance + delta),
+              withdrawable: newWithdrawable !== undefined ? newWithdrawable : u.withdrawable,
               hasDeposited: u.hasDeposited || kind === "deposit",
               transactions: [
                 {

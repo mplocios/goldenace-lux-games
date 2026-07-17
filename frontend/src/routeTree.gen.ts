@@ -14,9 +14,15 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as PlayGameIdRouteImport } from './routes/play.$gameId'
 import { Route as CategoryCategoryRouteImport } from './routes/category.$category'
+import { Route as AdminTransactionsRouteImport } from './routes/admin/transactions'
+import { Route as AdminPlayersRouteImport } from './routes/admin/players'
+import { Route as AdminGamesRouteImport } from './routes/admin/games'
+import { Route as AdminPlayerIdRouteImport } from './routes/admin/player.$id'
 
 const WalletRoute = WalletRouteImport.update({
   id: '/wallet',
@@ -43,10 +49,20 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
 } as any)
 const PlayGameIdRoute = PlayGameIdRouteImport.update({
   id: '/play/$gameId',
@@ -58,16 +74,42 @@ const CategoryCategoryRoute = CategoryCategoryRouteImport.update({
   path: '/category/$category',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminTransactionsRoute = AdminTransactionsRouteImport.update({
+  id: '/transactions',
+  path: '/transactions',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPlayersRoute = AdminPlayersRouteImport.update({
+  id: '/players',
+  path: '/players',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminGamesRoute = AdminGamesRouteImport.update({
+  id: '/games',
+  path: '/games',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPlayerIdRoute = AdminPlayerIdRouteImport.update({
+  id: '/player/$id',
+  path: '/player/$id',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
   '/wallet': typeof WalletRoute
+  '/admin/games': typeof AdminGamesRoute
+  '/admin/players': typeof AdminPlayersRoute
+  '/admin/transactions': typeof AdminTransactionsRoute
   '/category/$category': typeof CategoryCategoryRoute
   '/play/$gameId': typeof PlayGameIdRoute
+  '/admin/': typeof AdminIndexRoute
+  '/admin/player/$id': typeof AdminPlayerIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -76,31 +118,48 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
   '/wallet': typeof WalletRoute
+  '/admin/games': typeof AdminGamesRoute
+  '/admin/players': typeof AdminPlayersRoute
+  '/admin/transactions': typeof AdminTransactionsRoute
   '/category/$category': typeof CategoryCategoryRoute
   '/play/$gameId': typeof PlayGameIdRoute
+  '/admin': typeof AdminIndexRoute
+  '/admin/player/$id': typeof AdminPlayerIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/settings': typeof SettingsRoute
   '/wallet': typeof WalletRoute
+  '/admin/games': typeof AdminGamesRoute
+  '/admin/players': typeof AdminPlayersRoute
+  '/admin/transactions': typeof AdminTransactionsRoute
   '/category/$category': typeof CategoryCategoryRoute
   '/play/$gameId': typeof PlayGameIdRoute
+  '/admin/': typeof AdminIndexRoute
+  '/admin/player/$id': typeof AdminPlayerIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/login'
     | '/profile'
     | '/register'
     | '/settings'
     | '/wallet'
+    | '/admin/games'
+    | '/admin/players'
+    | '/admin/transactions'
     | '/category/$category'
     | '/play/$gameId'
+    | '/admin/'
+    | '/admin/player/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -109,22 +168,34 @@ export interface FileRouteTypes {
     | '/register'
     | '/settings'
     | '/wallet'
+    | '/admin/games'
+    | '/admin/players'
+    | '/admin/transactions'
     | '/category/$category'
     | '/play/$gameId'
+    | '/admin'
+    | '/admin/player/$id'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/login'
     | '/profile'
     | '/register'
     | '/settings'
     | '/wallet'
+    | '/admin/games'
+    | '/admin/players'
+    | '/admin/transactions'
     | '/category/$category'
     | '/play/$gameId'
+    | '/admin/'
+    | '/admin/player/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
   LoginRoute: typeof LoginRoute
   ProfileRoute: typeof ProfileRoute
   RegisterRoute: typeof RegisterRoute
@@ -171,12 +242,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/play/$gameId': {
       id: '/play/$gameId'
@@ -192,11 +277,58 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CategoryCategoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/transactions': {
+      id: '/admin/transactions'
+      path: '/transactions'
+      fullPath: '/admin/transactions'
+      preLoaderRoute: typeof AdminTransactionsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/players': {
+      id: '/admin/players'
+      path: '/players'
+      fullPath: '/admin/players'
+      preLoaderRoute: typeof AdminPlayersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/games': {
+      id: '/admin/games'
+      path: '/games'
+      fullPath: '/admin/games'
+      preLoaderRoute: typeof AdminGamesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/player/$id': {
+      id: '/admin/player/$id'
+      path: '/player/$id'
+      fullPath: '/admin/player/$id'
+      preLoaderRoute: typeof AdminPlayerIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
+interface AdminRouteChildren {
+  AdminGamesRoute: typeof AdminGamesRoute
+  AdminPlayersRoute: typeof AdminPlayersRoute
+  AdminTransactionsRoute: typeof AdminTransactionsRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+  AdminPlayerIdRoute: typeof AdminPlayerIdRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminGamesRoute: AdminGamesRoute,
+  AdminPlayersRoute: AdminPlayersRoute,
+  AdminTransactionsRoute: AdminTransactionsRoute,
+  AdminIndexRoute: AdminIndexRoute,
+  AdminPlayerIdRoute: AdminPlayerIdRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
   LoginRoute: LoginRoute,
   ProfileRoute: ProfileRoute,
   RegisterRoute: RegisterRoute,

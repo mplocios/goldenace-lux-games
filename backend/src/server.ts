@@ -14,6 +14,8 @@ import { Payments } from './payment/Payment';
 import WalletAccount from './wallet_account/wallet_accounts';
 import { InhouseApi } from './inhouse_api/api';
 import { CoreBridgeApi } from './provider/core/api';
+import { AdminApi } from './admin/Admin';
+import Favorite from '../models/Favorite';
 
 export class Server {
   fastify: any = undefined
@@ -93,6 +95,7 @@ export class Server {
 
       fastify.register(InhouseApi.register, { prefix: 'api/inhouse' })
       fastify.register(CoreBridgeApi.register, { prefix: 'api/v1/platform' })
+      fastify.register(AdminApi.register, { prefix: 'api/admin' })
       // fastify.addHook("onRequest", async (req, reply) => {
       //   console.log(`${req.method} ${req.url}`);
       //   console.log(`${req.body}`)
@@ -124,5 +127,6 @@ export class Server {
 
 function loadAllModels(sequelize: Sequelize) {
   Wallet.modelInit(sequelize)
+  Favorite.sync();
 }
 

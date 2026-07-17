@@ -4,7 +4,10 @@ import { LoginController } from "./Login";
 import { ProfileController } from "./Profile";
 import { TransactionController } from "./Transaction";
 import { WalletController } from "./Wallet";
-import { UserController } from "./User"; 
+import { UserController } from "./User";
+import { FavoritesController } from "./Favorites";
+import { TransactionHistoryController } from "./TransactionHistory";
+import { DepositWithdrawController } from "./DepositWithdraw";
 import { Sequelize } from "sequelize";
 import User from "../../models/User";
 
@@ -18,6 +21,9 @@ export class Users {
     TransactionController.init(app)
     UserController.init(app)
     WalletController.init(app)
+    FavoritesController.init(app)
+    TransactionHistoryController.init(app)
+    DepositWithdrawController.init(app)
   }
 
   static loadModels(sequelize: Sequelize) {

@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ArrowLeft, ChevronLeft, ChevronRight, Heart } from "lucide-react";
-import { GameCard } from "@/components/game-card";
+import { ArrowLeft, Heart } from "lucide-react";
+import { Paginator } from "@/components/paginator";
+import { GameCard, type Game } from "@/components/game-card";
 import { isValidCategory, categoryLabels, type CategoryId } from "@/lib/games";
-import { Button } from "@/components/ui/button";
 import { useFavorites } from "@/lib/favorites";
 import { GameCardSkeleton } from "@/components/game-skeleton";
-import { useCategoryGames, useGames } from "@/lib/use-games";
+import { useCategoryGames } from "@/lib/use-games";
+import { apiGetGames } from "@/lib/api";
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 51;
 
 const isValid = (s: string) => s === "favorites" || isValidCategory(s);
 
@@ -36,20 +37,33 @@ function CategoryPage() {
     isFav ? "casino" : slug,
     500,
   );
-  const { allGames, loading: allLoading } = useGames(50);
 
-  const loading = isFav ? allLoading : catLoading;
+  const [favGames, setFavGames] = useState<Game[]>([]);
+  const [favLoading, setFavLoading] = useState(false);
 
-  const games = isFav
-    ? (() => {
-        const seen = new Set<string>();
-        return allGames.filter((g) => {
-          if (!ids.includes(g.id) || seen.has(g.id)) return false;
-          seen.add(g.id);
-          return true;
-        });
-      })()
-    : categoryGames;
+  useEffect(() => {
+    if (!isFav || ids.length === 0) {
+      setFavGames([]);
+      return;
+    }
+    setFavLoading(true);
+    apiGetGames({ uuids: ids.join(",") })
+      .then((dbGames) => {
+        setFavGames(
+          dbGames.map((g) => ({
+            id: g.uuid,
+            title: g.name,
+            provider: g.provider,
+            image: g.thumbnail || g.image || "",
+          })),
+        );
+      })
+      .catch(() => {})
+      .finally(() => setFavLoading(false));
+  }, [isFav, ids.join(",")]);
+
+  const loading = isFav ? favLoading : catLoading;
+  const games = isFav ? favGames : categoryGames;
 
   const label = isFav ? "Your Favorites" : (categoryLabels[slug as CategoryId] || slug);
 
@@ -70,9 +84,20 @@ function CategoryPage() {
             {isFav && <Heart className="h-6 w-6 fill-gold text-gold" aria-hidden="true" />}
             {label}
           </h1>
-          <p className="text-sm text-muted-foreground">{games.length} games · Page {page} of {totalPages}</p>
+          <p className="text-sm text-muted-foreground">{games.length} games</p>
         </div>
       </header>
+
+      {!loading && totalPages > 1 && (
+        <div className="mb-4">
+          <p className="text-sm text-muted-foreground">
+            Showing {items.length} of {games.length} games ({PAGE_SIZE} per page)
+          </p>
+          <div className="mt-2">
+            <Paginator page={page} totalPages={totalPages} total={games.length} onPageChange={setPage} />
+          </div>
+        </div>
+      )}
 
       {isFav && games.length === 0 && !loading ? (
         <div className="rounded-2xl border border-dashed border-gold/30 bg-card/40 p-10 text-center">
@@ -95,27 +120,9 @@ function CategoryPage() {
         </div>
       )}
 
-      {!loading && totalPages > 1 && (
-        <div className="mt-8 flex items-center justify-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="border-gold/40">
-            <ChevronLeft className="h-4 w-4" /> Prev
-          </Button>
-          {Array.from({ length: Math.min(totalPages, 10) }).map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setPage(i + 1)}
-              aria-label={`Go to page ${i + 1}`}
-              aria-current={page === i + 1 ? "page" : undefined}
-              className={`h-9 w-9 rounded-md text-sm font-medium transition-colors ${
-                page === i + 1 ? "bg-gold-gradient text-primary-foreground" : "border border-border/60 text-foreground hover:border-gold hover:text-gold"
-              }`}
-            >
-              {i + 1}
-            </button>
-          ))}
-          <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="border-gold/40">
-            Next <ChevronRight className="h-4 w-4" />
-          </Button>
+      {!loading && (
+        <div className="mt-8">
+          <Paginator page={page} totalPages={totalPages} total={games.length} onPageChange={setPage} />
         </div>
       )}
     </main>

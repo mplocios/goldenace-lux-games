@@ -1,8 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import User from "../../models/User";
 import Transaction from "../../models/Transaction";
-import { generateRandomString,DateToday } from "../utils/common";
-import { generateSignature } from "../utils/sigepaySigniture";
 import Wallet from "../../models/Wallet";
 import axios from "axios";
 import WebSocketService from "../services/WebSocketService";
@@ -15,34 +13,27 @@ const paymentAPIPassword = process.env.PAYMENT_API_PASSWORD || '';
 const paymentAPIKey = process.env.PAYMENT_API_KEY || '';
 const URL = process.env.URL || '';
 
-const jwtSecret = process.env.JWT_SECRET_KEY || 'ToTheMoon__69420';
+
 
 export async function cashout(req: FastifyRequest<{ Body: Params }>, res: FastifyReply) {
   try {
-    const { token } = req.headers;
-    const {  amount, bankCode, accountNo, firstName, middleName, lastName } = req.body;
+    const authHeader = req.headers['authorization'];
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : req.headers['token'] as string;
+    const { amount, bankCode, accountNo, firstName, middleName, lastName } = req.body;
 
     if (!token) {
       return res.code(400).send({ error: "Token is missing" });
     }
 
-    const decoded = await new Promise((resolve, reject) => {
-      this.jwt.verify(token, jwtSecret, (err, decoded) => {
-        if (err) {
-          reject(new Error("Token is invalid or expired."));
-        } else {
-          resolve(decoded);
-        }
-      });
-    });
+    const decoded: any = req.server.jwt.verify(token);
 
     const response = await processCashOut({
       token: decoded,
-      amount, 
+      amount,
       bankCode,
-      accountNo, 
-      firstName, 
-      middleName, 
+      accountNo,
+      firstName,
+      middleName,
       lastName
     });
 
@@ -70,8 +61,8 @@ async function processCashOut({token,amount, bankCode, accountNo, firstName, mid
         where: { userId: user_detail.id }
       });
 
-      if(amount>wallet.credits){
-        throw { message: "Not enough balance." };
+      if(amount > (+wallet.withdrawable || 0)){
+        throw { message: "Insufficient withdrawable balance." };
       }
 
       const date = new Date();
@@ -84,7 +75,7 @@ async function processCashOut({token,amount, bankCode, accountNo, firstName, mid
         bank_code: bankCode.toLowerCase(),
         order_id,
         payment_type: "1",
-        callback_url: `${URL}/api/payment/callback`, 
+        callback_url: `${URL}/api/payments/callback`,
         mobile_number : accountNo
       }
 
@@ -95,18 +86,18 @@ async function processCashOut({token,amount, bankCode, accountNo, firstName, mid
       };
   
       const response = await axios.post(`${paymentURL}/cashout`, payload, { headers });
-      const new_amount = wallet.credits - +amount
       console.log(response?.data)
       //cancel transaction if negative
       if (response.data.status !== true)  throw response.data;
 
         const  previousBalance = wallet.credits
-        const  newBalance = wallet.credits - amount
+        const  newBalance = +wallet.credits - +amount
         if(newBalance < 0){
           return "Insufficient Balance"
         }
-        
+
         wallet.credits = newBalance
+        wallet.withdrawable = +(+wallet.withdrawable - +amount).toFixed(4)
 
         const transaction = await Transaction.create({
           userId : user_detail.id,
@@ -127,9 +118,10 @@ async function processCashOut({token,amount, bankCode, accountNo, firstName, mid
         WebSocketService.sendToClient(`${wallet.userId}`, {
           channel:  "/CreditUpdate",
           data: {
-            credits: new_amount,  // Send the updated credits
+            credits: newBalance,
+            withdrawable: parseFloat(wallet.withdrawable) || 0,
             message: "Your credits have been updated.",
-            status: "success" 
+            status: "success"
           }
         });
         const responses = {
@@ -149,7 +141,7 @@ async function processCashOut({token,amount, bankCode, accountNo, firstName, mid
             main_db_transaction_number : transaction.orderNumber,
             value_before : `${previousBalance}`,
             value : `${amount}`,
-            value_after: `${new_amount}`,
+            value_after: `${newBalance}`,
             modified_by :+agent_id,
             created_by :+agent_id
           }

@@ -5,6 +5,8 @@ import generateSignature from '../utils/calculateXSign';
 import Game from "../../models/Game";
 import { CasinoManager } from "../manager/CasinoManager";
 import { Sequelize,Op } from 'sequelize';
+import { coreBridgeClient } from '../provider/core/client';
+import { COREBRIDGE_CURRENCY, COREBRIDGE_JURISDICTION } from '../provider/core/config';
 
 // Load environment variables from .env file
 const merchantKey = process.env.SLOTEGRATOR_MERCHANT_KEY || '';
@@ -31,6 +33,8 @@ export class CasinoController {
 
     app.post('/selfValidate',apiController.selfValidate)
     app.post('/test/selfValidate',apiController.selfValidateTest)
+    app.post('/play/init', apiController.unifiedGameInit)
+    app.get('/games/:uuid', apiController.getGameByUuid)
   }
 }
 
@@ -44,8 +48,8 @@ class ApiController {
 
   async Games(req: FastifyRequest<{ Querystring: GamesParams }>, res: FastifyReply) {
     try {
-      const { provider, type, order_by = 'asc', offset, limit, is_mobile , is_active } = req.query;
-  
+      const { provider, type, order_by = 'asc', offset, limit, is_mobile , is_active, q, uuids } = req.query;
+
       // Construct the query options
       const queryOptions: any = {
         where: {},
@@ -53,15 +57,28 @@ class ApiController {
         offset: offset ? Number(offset) : undefined,
         limit: limit ? Number(limit) : undefined,
       };
-  
+
       // Add filters to the where clause if provided
       if (provider) queryOptions.where.provider = provider;
       if (type) queryOptions.where.type = type;
       if (is_active !== undefined) queryOptions.where.is_active = Boolean(is_active);
       if (is_mobile !== undefined) queryOptions.where.is_mobile = Boolean(is_mobile);
 
+      if (uuids) {
+        queryOptions.where.uuid = { [Op.in]: uuids.split(',') };
+      }
+
+      if (q) {
+        const term = `%${q}%`;
+        queryOptions.where[Op.or] = [
+          { name: { [Op.like]: term } },
+          { provider: { [Op.like]: term } },
+          { type: { [Op.like]: term } },
+        ];
+      }
+
       return await Game.findAll(queryOptions);
- 
+
     } catch (e) {
       return e; // Return error if any
     }
@@ -368,6 +385,73 @@ class ApiController {
     }
   }
 
+  async unifiedGameInit(req: FastifyRequest<{Body: initGamesParams}>, res: FastifyReply) {
+    try {
+      const requestData = req.body;
+      const gameUuid = requestData.game_uuid;
+      const game = await Game.findOne({ where: { uuid: gameUuid } });
+      if (!game) return res.status(404).send({ error: 'Game not found' });
+
+      if (game.source === 'corebridge') {
+        try {
+          await coreBridgeClient.post('/player/create', {
+            player_id: requestData.player_id,
+            currency: requestData.currency || COREBRIDGE_CURRENCY,
+            country: COREBRIDGE_JURISDICTION,
+          });
+        } catch (e: any) {
+          if (e?.response?.data?.error_code !== 'PLAYER_EXISTS') {
+            console.warn('CoreBridge player create warning:', e?.response?.data || e.message);
+          }
+        }
+
+        const data = await coreBridgeClient.post('/games/init', {
+          game_uuid: gameUuid,
+          player_id: requestData.player_id,
+          currency: requestData.currency || COREBRIDGE_CURRENCY,
+          language: requestData.language || 'en',
+          ...(requestData.return_url && { return_url: requestData.return_url }),
+        });
+        return data;
+      }
+
+      // Slotegrator
+      const nonce = crypto.randomUUID();
+      const timestamp = Math.floor(Date.now() / 1000);
+      const casinoManager = CasinoManager.getInstance();
+      const data = {
+        ...requestData,
+        return_url: returnUrl,
+        session_id: nonce,
+        device: requestData.device || 'desktop',
+      };
+
+      const headers = {
+        'X-Merchant-Id': merchantId,
+        'X-Timestamp': timestamp.toString(),
+        'X-Nonce': nonce,
+      };
+
+      const signature = generateSignature({ ...headers, ...data });
+      headers['X-Sign'] = signature;
+
+      await casinoManager.setUserCasinoSession(data);
+      const response = await axios.post(`${baseUrl}/games/init`, data, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', ...headers },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Unified game init error:', error?.response?.data || error.message);
+      return res.status(500).send({ error: 'Failed to initialize game' });
+    }
+  }
+
+  async getGameByUuid(req: FastifyRequest<{ Params: { uuid: string } }>, res: FastifyReply) {
+    const game = await Game.findOne({ where: { uuid: req.params.uuid } });
+    if (!game) return res.status(404).send({ error: 'Game not found' });
+    return res.send(game);
+  }
+
   async countGames(req: FastifyRequest<{ Querystring: CountGamesParams }>, res: FastifyReply) {
     try {
       const { provider, type, offset, limit, is_mobile } = req.query;
@@ -499,13 +583,15 @@ const freespinCampaignData = {
 // });
 
 class GamesParams{
-  provider?: string;  
+  provider?: string;
   type?: string;
   is_mobile?: boolean;
-  order_by?: 'asc' | 'desc'; // Optional field for ordering
+  order_by?: 'asc' | 'desc';
   offset?: number;
   limit?: number;
   is_active?: boolean;
+  q?: string;
+  uuids?: string;
 }
 class CountGamesParams{
   provider?: string;  

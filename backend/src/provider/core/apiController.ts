@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { coreBridgeClient } from './client';
 import { COREBRIDGE_CURRENCY, COREBRIDGE_JURISDICTION } from './config';
 import Game from '../../../models/Game';
+import User from '../../../models/User';
 
 export class CoreBridgeController {
   static async init(app: FastifyInstance) {
@@ -75,6 +76,23 @@ class Controller {
   async initGame(req: FastifyRequest<{ Body: InitGameBody }>, res: FastifyReply) {
     try {
       const body = req.body;
+
+      // Auto-register player with CoreBridge if not already registered
+      try {
+        await coreBridgeClient.post('/player/create', {
+          player_id: body.player_id,
+          currency: body.currency || COREBRIDGE_CURRENCY,
+          country: COREBRIDGE_JURISDICTION,
+        });
+        console.log(`CoreBridge: registered player ${body.player_id}`);
+      } catch (regErr: any) {
+        // Player may already exist — that's fine
+        const errData = regErr?.response?.data;
+        if (errData?.error_code !== 'PLAYER_EXISTS') {
+          console.warn('CoreBridge player create warning:', errData || regErr.message);
+        }
+      }
+
       const data = await coreBridgeClient.post('/games/init', {
         game_uuid: body.game_uuid,
         player_id: body.player_id,

@@ -13,6 +13,7 @@ import CommissionDistribution from '../../services/CommissionDistribution';
 import CreditHistory from '../../services/CreditHistory';
 import getAgentId from '../../services/AgenDbId';
 import { encrypt } from '../../utils/encryption';
+import WebSocketService from '../../services/WebSocketService';
 
 export class CoreBridgeCallbackController {
   static async init(app: FastifyInstance) {
@@ -33,15 +34,28 @@ function verifySignature(body: Record<string, any>, headers: Record<string, any>
     'X-Nonce': headers['x-nonce'],
   };
 
-  const sorted = Object.keys(all).sort()
-    .reduce((o, k) => ({ ...o, [k]: all[k] }), {} as Record<string, any>);
+  // Match Python's urlencode(sorted(params.items())) exactly
+  const entries = Object.entries(all).map(([k, v]) => [k, String(v ?? '')]);
+  entries.sort((a, b) => {
+    if (a[0] < b[0]) return -1;
+    if (a[0] > b[0]) return 1;
+    if (a[1] < b[1]) return -1;
+    if (a[1] > b[1]) return 1;
+    return 0;
+  });
+  const hashString = entries.map(([k, v]) => `${pythonQuotePlus(k)}=${pythonQuotePlus(v)}`).join('&');
 
   const expected = crypto
     .createHmac('sha1', COREBRIDGE_API_SECRET)
-    .update(qs.stringify(sorted))
+    .update(hashString)
     .digest('hex');
 
   return expected === headers['x-sign'];
+}
+
+function pythonQuotePlus(s: string): string {
+  // Match Python's urllib.parse.quote_plus: encode everything except unreserved chars, space becomes '+'
+  return encodeURIComponent(s).replace(/%20/g, '+').replace(/[!'()*]/g, c => '%' + c.charCodeAt(0).toString(16).toUpperCase());
 }
 
 class CoreBridgeCallbackHandler {
@@ -55,7 +69,7 @@ class CoreBridgeCallbackHandler {
       }
 
       const ts = parseInt(req.headers['x-timestamp'] as string, 10);
-      if (Math.abs(Math.floor(Date.now() / 1000) - ts) > 30) {
+      if (Math.abs(Math.floor(Date.now() / 1000) - ts) > 300) {
         return res.status(401).send({ error_code: 'AUTH005', error_description: 'Timestamp drift too large' });
       }
 
@@ -140,6 +154,11 @@ class TransactionHandler {
       STATUS: 'ONGOING',
     });
 
+    const playable = +(+wallet.credits - (+wallet.withdrawable || 0)).toFixed(4);
+    const fromWithdrawable = Math.max(0, +(amount - playable).toFixed(4));
+    if (fromWithdrawable > 0) {
+      wallet.withdrawable = +(+wallet.withdrawable - fromWithdrawable).toFixed(4);
+    }
     const newCredit = (+wallet.credits - +amount).toFixed(4);
     wallet.credits = +newCredit;
     await wallet.save();
@@ -213,6 +232,9 @@ class TransactionHandler {
     const oldBalance = wallet.credits;
     const newCredit = (+wallet.credits + +amount).toFixed(4);
     wallet.credits = +newCredit;
+    if (+amount > 0) {
+      wallet.withdrawable = +(+wallet.withdrawable + +amount).toFixed(4);
+    }
     await wallet.save();
 
     await BetTransaction.update(
@@ -236,6 +258,16 @@ class TransactionHandler {
 
     gameRound.STATUS = 'COMPLETE';
     await gameRound.save();
+
+    WebSocketService.sendToClient(`${player_id}`, {
+      channel: '/CreditUpdate',
+      data: {
+        credits: wallet.credits,
+        withdrawable: parseFloat(wallet.withdrawable) || 0,
+        message: 'Your credits have been updated successfully.',
+        status: 'success',
+      },
+    });
 
     try {
       const agent_id = await getAgentId(player_id);

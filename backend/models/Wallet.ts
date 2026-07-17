@@ -4,6 +4,7 @@ class Wallet extends Model {
   public id!: number;
   public userId!: number;
   public credits!: any;
+  public withdrawable!: any;
   public agent_db_credits!: any;
 
   static modelInit(sequelize: Sequelize) {
@@ -23,6 +24,11 @@ class Wallet extends Model {
         credits: {
           type: DataTypes.DECIMAL(16,4),
           allowNull: true,
+        },
+        withdrawable: {
+          type: DataTypes.DECIMAL(16,4),
+          allowNull: true,
+          defaultValue: 0,
         },
         agent_db_user_id: {
           type: DataTypes.DECIMAL(16,4),

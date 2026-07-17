@@ -22,6 +22,8 @@ class User extends Model {
   nickname: string;
   type: string;
   playerId: string;
+  public status!: string;
+  public bannedUntil!: Date | null;
 
   static modelInit(sequelize: Sequelize) {
     User.init(
@@ -57,6 +59,16 @@ class User extends Model {
           type: DataTypes.STRING,
           allowNull: true,
         },
+        status: {
+          type: DataTypes.STRING,
+          allowNull: true,
+          defaultValue: 'active',
+        },
+        bannedUntil: {
+          type: DataTypes.DATE,
+          allowNull: true,
+          defaultValue: null,
+        },
       },
       {
         sequelize,
@@ -69,6 +81,16 @@ class User extends Model {
     User.hasOne(Wallet, {
       foreignKey: 'userId',
       as: 'wallet',
+    });
+
+    User.hasMany(Transaction, {
+      foreignKey: 'userId',
+      as: 'transactions',
+    });
+
+    Transaction.belongsTo(User, {
+      foreignKey: 'userId',
+      as: 'user',
     });
    
   }

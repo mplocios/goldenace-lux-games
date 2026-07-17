@@ -28,7 +28,7 @@ function LoginPage() {
     try {
       const data = await apiLogin(mobile, pw);
       login(data.user.mobile_number, data.token, data.user);
-      navigate({ to: "/" });
+      navigate({ to: data.user.type === "admin" ? "/admin" : "/" });
     } catch (err: any) {
       setError(err.message || "Login failed");
     } finally {

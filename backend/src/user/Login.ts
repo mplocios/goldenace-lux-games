@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import User from "../../models/User";
 import Wallet from "../../models/Wallet";
+import Transaction from "../../models/Transaction";
 import { Errors, sendError } from "../constant/errors";
 import { errorResponseSchema } from "../constant/errorSchema";
 
@@ -23,7 +24,18 @@ async function login(req: FastifyRequest<{ Body: LoginParams }>, res: FastifyRep
     return sendError(res, Errors.USER_INVALID_CREDENTIALS);
   }
 
+  if (user.status === 'banned') {
+    return res.code(403).send({ error: 'account_banned', status: 403, message: 'Your account has been permanently banned.' });
+  }
+  if (user.status === 'suspended' && user.bannedUntil && new Date(user.bannedUntil) > new Date()) {
+    return res.code(403).send({ error: 'account_suspended', status: 403, message: `Your account is suspended until ${new Date(user.bannedUntil).toLocaleDateString()}.` });
+  }
+  if (user.status === 'suspended' && (!user.bannedUntil || new Date(user.bannedUntil) <= new Date())) {
+    await user.update({ status: 'active', bannedUntil: null });
+  }
+
   const wallet = await Wallet.findOne({ where: { userId: user.id } });
+  const depositCount = await Transaction.count({ where: { userId: user.id, event: 'deposit', status: 'success' } });
   let payload = {
     id: user.id,
     playerId: user.playerId || "",
@@ -32,6 +44,8 @@ async function login(req: FastifyRequest<{ Body: LoginParams }>, res: FastifyRep
     mobile_number: mobile,
     type: user.type,
     balance: wallet ? parseFloat(wallet.credits) || 0 : 0,
+    withdrawable: wallet ? parseFloat(wallet.withdrawable) || 0 : 0,
+    hasDeposited: depositCount > 0,
   };
   const token = app.jwt.sign(payload, { expiresIn: "24h" });
   return res.code(200).send({
@@ -60,6 +74,7 @@ async function checkLogin(req: FastifyRequest, res: FastifyReply) {
     }
 
     const wallet = await Wallet.findOne({ where: { userId: getUser.id } });
+    const depositCount = await Transaction.count({ where: { userId: getUser.id, event: 'deposit', status: 'success' } });
     const data = {
       token: token,
       user: {
@@ -69,6 +84,8 @@ async function checkLogin(req: FastifyRequest, res: FastifyReply) {
         mobile_number: getUser.mobile,
         type: getUser.type,
         balance: wallet ? parseFloat(wallet.credits) || 0 : 0,
+        withdrawable: wallet ? parseFloat(wallet.withdrawable) || 0 : 0,
+        hasDeposited: depositCount > 0,
       }
     };
 
@@ -121,12 +138,15 @@ const schema = {
               mobile_number: { type: 'string' },
               type: { type: 'string' },
               balance: { type: 'number' },
+              withdrawable: { type: 'number' },
+              hasDeposited: { type: 'boolean' },
             }
           },
         },
         required: ['token', 'user']
       },
       401: errorResponseSchema,
+      403: errorResponseSchema,
       404: errorResponseSchema,
     },
   },
@@ -148,6 +168,8 @@ const checkLoginSchema = {
               mobile_number: { type: 'string' },
               type: { type: 'string' },
               balance: { type: 'number' },
+              withdrawable: { type: 'number' },
+              hasDeposited: { type: 'boolean' },
             }
           },
         },

@@ -112,7 +112,7 @@ class TransactionHandler {
       return { error_code: 'PLAYER_NOT_FOUND', error_description: 'Player not found' };
     }
 
-    return { balance: toBalance(wallet.credits) };
+    return { balance: toBalance(wallet.credits), bonus: toBalance(wallet.bonus) };
   }
 
   async bet(data: CallbackBody) {
@@ -135,7 +135,7 @@ class TransactionHandler {
 
     const existingBet = await BetTransaction.findOne({ where: { TRANSACTION_ID: transaction_id } });
     if (existingBet) {
-      return { balance: toBalance(wallet.credits) };
+      return { balance: toBalance(wallet.credits), bonus: toBalance(wallet.bonus) };
     }
 
     let gameRound = await GameRound.findOne({ where: { TRANSACTION_ID: transaction_id } });
@@ -200,7 +200,7 @@ class TransactionHandler {
       console.error('CoreBridge bet commission/history error:', e);
     }
 
-    return { balance: toBalance(wallet.credits) };
+    return { balance: toBalance(wallet.credits), bonus: toBalance(wallet.bonus) };
   }
 
   async win(data: CallbackBody) {
@@ -230,7 +230,7 @@ class TransactionHandler {
 
     const existingWin = await Bets.findOne({ where: { transaction_id } });
     if (existingWin) {
-      return { balance: toBalance(wallet.credits) };
+      return { balance: toBalance(wallet.credits), bonus: toBalance(wallet.bonus) };
     }
 
     const totalBetAmount = await BetTransaction.sum('BET_AMOUNT', {
@@ -315,7 +315,7 @@ class TransactionHandler {
       console.error('CoreBridge win commission/history error:', e);
     }
 
-    return { balance: toBalance(wallet.credits) };
+    return { balance: toBalance(wallet.credits), bonus: toBalance(wallet.bonus) };
   }
 
   async refund(data: CallbackBody) {
@@ -327,17 +327,17 @@ class TransactionHandler {
     if (!wallet) return { error_code: 'PLAYER_NOT_FOUND', error_description: 'Player not found' };
 
     if (!refTxnId) {
-      return { balance: toBalance(wallet.credits) };
+      return { balance: toBalance(wallet.credits), bonus: toBalance(wallet.bonus) };
     }
 
     let checkBet: any = await BetTransaction.findOne({ where: { TRANSACTION_ID: refTxnId } });
     if (!checkBet) {
       checkBet = await Bets.findOne({ where: { transaction_id: refTxnId } });
-      if (!checkBet) return { balance: toBalance(wallet.credits) };
+      if (!checkBet) return { balance: toBalance(wallet.credits), bonus: toBalance(wallet.bonus) };
     }
 
     if (checkBet?.STATUS === 'CANCELLED' || checkBet?.status === 'CANCELLED') {
-      return { balance: toBalance(wallet.credits) };
+      return { balance: toBalance(wallet.credits), bonus: toBalance(wallet.bonus) };
     }
 
     if (checkBet.STATUS) {
@@ -362,7 +362,7 @@ class TransactionHandler {
       }
     }
 
-    return { balance: toBalance(wallet.credits) };
+    return { balance: toBalance(wallet.credits), bonus: toBalance(wallet.bonus) };
   }
 
   async rollback(data: CallbackBody) {
@@ -373,10 +373,10 @@ class TransactionHandler {
     if (!wallet) return { error_code: 'PLAYER_NOT_FOUND', error_description: 'Player not found' };
 
     const checkBet = await BetTransaction.findOne({ where: { TRANSACTION_ID: refTxnId } });
-    if (!checkBet) return { balance: toBalance(wallet.credits) };
+    if (!checkBet) return { balance: toBalance(wallet.credits), bonus: toBalance(wallet.bonus) };
 
     if (checkBet.STATUS === 'ROLLBACK') {
-      return { balance: toBalance(wallet.credits) };
+      return { balance: toBalance(wallet.credits), bonus: toBalance(wallet.bonus) };
     }
 
     const amount = parseFloat(String(checkBet.BET_AMOUNT));
@@ -387,7 +387,7 @@ class TransactionHandler {
     wallet.credits = +newCredit;
     await wallet.save();
 
-    return { balance: toBalance(wallet.credits) };
+    return { balance: toBalance(wallet.credits), bonus: toBalance(wallet.bonus) };
   }
 }
 

@@ -4,6 +4,7 @@ class Wallet extends Model {
   public id!: number;
   public userId!: number;
   public credits!: any;
+  public bonus!: any;
   public withdrawable!: any;
   public agent_db_credits!: any;
 
@@ -24,6 +25,11 @@ class Wallet extends Model {
         credits: {
           type: DataTypes.DECIMAL(16,4),
           allowNull: true,
+        },
+        bonus: {
+          type: DataTypes.DECIMAL(16,4),
+          allowNull: true,
+          defaultValue: 0,
         },
         withdrawable: {
           type: DataTypes.DECIMAL(16,4),

@@ -49,13 +49,17 @@ function CategoryPage() {
     setFavLoading(true);
     apiGetGames({ uuids: ids.join(",") })
       .then((dbGames) => {
+        const byUuid = new Map(dbGames.map((g) => [g.uuid, g]));
         setFavGames(
-          dbGames.map((g) => ({
-            id: g.uuid,
-            title: g.name,
-            provider: g.provider,
-            image: g.thumbnail || g.image || "",
-          })),
+          ids
+            .map((uuid) => byUuid.get(uuid))
+            .filter(Boolean)
+            .map((g) => ({
+              id: g!.uuid,
+              title: g!.name,
+              provider: g!.provider,
+              image: g!.thumbnail || g!.image || "",
+            })),
         );
       })
       .catch(() => {})

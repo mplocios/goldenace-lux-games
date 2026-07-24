@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import User from "../../models/User";
 import Wallet from "../../models/Wallet";
 import Transaction from "../../models/Transaction";
+import LoginLog from "../../models/LoginLog";
 import { Errors, sendError } from "../constant/errors";
 import { errorResponseSchema } from "../constant/errorSchema";
 
@@ -48,6 +49,19 @@ async function login(req: FastifyRequest<{ Body: LoginParams }>, res: FastifyRep
     hasDeposited: depositCount > 0,
   };
   const token = app.jwt.sign(payload, { expiresIn: "24h" });
+
+  const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim()
+    || req.headers['x-real-ip'] as string
+    || req.ip;
+  LoginLog.create({
+    userId: user.id,
+    mobile,
+    nickname: user.nickname || null,
+    userType: user.type,
+    ip,
+    userAgent: (req.headers['user-agent'] || null) as string | null,
+  }).catch(() => {});
+
   return res.code(200).send({
     token: token,
     user: payload

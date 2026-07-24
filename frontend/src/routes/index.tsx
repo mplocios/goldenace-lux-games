@@ -31,16 +31,20 @@ function Index() {
   useEffect(() => {
     if (ids.length === 0) { setFavoriteGames([]); return; }
     apiGetGames({ uuids: ids.join(",") })
-      .then((dbGames) =>
+      .then((dbGames) => {
+        const byUuid = new Map(dbGames.map((g) => [g.uuid, g]));
         setFavoriteGames(
-          dbGames.map((g) => ({
-            id: g.uuid,
-            title: g.name,
-            provider: g.provider,
-            image: g.thumbnail || g.image || "",
-          })),
-        ),
-      )
+          ids
+            .map((uuid) => byUuid.get(uuid))
+            .filter(Boolean)
+            .map((g) => ({
+              id: g!.uuid,
+              title: g!.name,
+              provider: g!.provider,
+              image: g!.thumbnail || g!.image || "",
+            })),
+        );
+      })
       .catch(() => {});
   }, [ids.join(",")]);
 

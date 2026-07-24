@@ -125,6 +125,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, [user]);
 
+  useEffect(() => {
+    const token = user?.token;
+    if (!token) return;
+
+    const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const host = import.meta.env.VITE_API_URL
+      ? new URL(import.meta.env.VITE_API_URL).host
+      : window.location.host;
+    const url = `${proto}//${host}/api/ws?token=${encodeURIComponent(token)}`;
+
+    let ws: WebSocket | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout>;
+    let alive = true;
+
+    function connect() {
+      if (!alive) return;
+      ws = new WebSocket(url);
+
+      ws.onmessage = (evt) => {
+        try {
+          const msg = JSON.parse(evt.data);
+          if (msg.channel === "/CreditUpdate" && msg.data) {
+            const { credits, withdrawable } = msg.data;
+            setUser((u) =>
+              u
+                ? {
+                    ...u,
+                    balance: credits != null ? +credits : u.balance,
+                    withdrawable: withdrawable != null ? +withdrawable : u.withdrawable,
+                  }
+                : u,
+            );
+          }
+        } catch {}
+      };
+
+      ws.onclose = () => {
+        if (alive) reconnectTimer = setTimeout(connect, 3000);
+      };
+
+      ws.onerror = () => ws?.close();
+    }
+
+    connect();
+
+    return () => {
+      alive = false;
+      clearTimeout(reconnectTimer);
+      ws?.close();
+    };
+  }, [user?.token]);
+
   const value: AuthCtx = {
     user,
     loading,

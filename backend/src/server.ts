@@ -15,7 +15,12 @@ import WalletAccount from './wallet_account/wallet_accounts';
 import { InhouseApi } from './inhouse_api/api';
 import { CoreBridgeApi } from './provider/core/api';
 import { AdminApi } from './admin/Admin';
+import { KadaPay } from './payment/kadapay';
 import Favorite from '../models/Favorite';
+import LoginLog from '../models/LoginLog';
+import BetTransaction from '../models/BetTransaction';
+import GameRound from '../models/GameRound';
+import { Op } from 'sequelize';
 
 export class Server {
   fastify: any = undefined
@@ -89,6 +94,7 @@ export class Server {
       // fastify.register(AgentSystem.register, { prefix: 'api/agents' })
       fastify.register(Transactions.register, { prefix: 'api/transactions' })
       fastify.register(Payments.register, { prefix: 'api/payments' })
+      fastify.register(KadaPay.register, { prefix: 'api/payments/kadapay' })
       fastify.register(Api.register, { prefix: 'api' })
       fastify.register(WalletAccount.register, { prefix: 'api/user' })
       fastify.register(CasinoApi.register, { prefix: 'api' })
@@ -128,5 +134,45 @@ export class Server {
 function loadAllModels(sequelize: Sequelize) {
   Wallet.modelInit(sequelize)
   Favorite.sync();
+  LoginLog.sync();
 }
+
+async function refundStaleBets() {
+  try {
+    const cutoff = new Date(Date.now() - 10 * 60 * 1000);
+    const staleBets = await BetTransaction.findAll({
+      where: { STATUS: 'ONGOING', createdAt: { [Op.lt]: cutoff } },
+    });
+    if (!staleBets.length) return;
+
+    const byUser: Record<number, number> = {};
+    const roundIds = new Set<number>();
+    for (const bet of staleBets) {
+      byUser[bet.userId] = (byUser[bet.userId] || 0) + parseFloat(String(bet.BET_AMOUNT));
+      roundIds.add(bet.GAMEROUND_ID);
+    }
+
+    for (const [userId, total] of Object.entries(byUser)) {
+      await Wallet.increment('credits', { by: total, where: { userId: +userId } });
+    }
+
+    await BetTransaction.update(
+      { STATUS: 'CANCELLED' },
+      { where: { STATUS: 'ONGOING', createdAt: { [Op.lt]: cutoff } } },
+    );
+
+    if (roundIds.size > 0) {
+      await GameRound.update(
+        { STATUS: 'CANCELLED' },
+        { where: { ID: Array.from(roundIds), STATUS: 'ONGOING' } },
+      );
+    }
+
+    console.log(`[STALE-BET] Refunded ${staleBets.length} stale bets for ${Object.keys(byUser).length} user(s)`);
+  } catch (e) {
+    console.error('[STALE-BET] Error:', e);
+  }
+}
+
+setInterval(refundStaleBets, 10 * 60 * 1000);
 

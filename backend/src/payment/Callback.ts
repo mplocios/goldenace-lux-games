@@ -1,107 +1,112 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import User from "../../models/User";
 import Transaction from "../../models/Transaction";
 import Wallet from "../../models/Wallet";
-import axios from "axios";
 import WebSocketService from "../services/WebSocketService";
 import CreditHistory from "../services/CreditHistory"
 import getAgentId from "../services/AgenDbId";
 
-const paymentURL = process.env.PAYMENT_URL || '';
-const paymentAPIUsername = process.env.PAYMENT_API_USERNAME || '';
-const paymentAPIPassword = process.env.PAYMENT_API_PASSWORD || '';
-const paymentAPIKey = process.env.PAYMENT_API_KEY || '';
-const URL = process.env.URL || '';
-
-const jwtSecret = process.env.JWT_SECRET_KEY || 'ToTheMoon__69420';
-
 export async function callback(req: FastifyRequest<{Body : RequestParams }> , res: FastifyReply) {
   try {
-    const body = req.body
-    const param = req.params
-    console.log("body : ", body)
-    console.log('param : ', param)
-    const {status,message,order_id,data} = req.body
+    const body = req.body;
+    console.log("[PAYMENT-CB] Received callback:", JSON.stringify(body));
+    console.log("[PAYMENT-CB] Headers:", JSON.stringify(req.headers));
+
+    const { status, message, order_id, data } = req.body;
+
+    if (!order_id) {
+      console.log("[PAYMENT-CB] No order_id in callback");
+      return res.code(400).send({ error_code: 400, message: "Missing order_id" });
+    }
 
     const transaction = await Transaction.findOne({
-      where : {
-        orderNumber : order_id,
-        status : "processing"
+      where: {
+        orderNumber: order_id,
+        status: "processing"
       }
-    })
- 
-    if(!transaction) {
- 
-      throw {error_code : 404 , message : "Transaction not found." }
-    }
-    if(!status){
-      transaction.status = "failed"
-      transaction.remarks = message
+    });
 
-      if(transaction.event == "withdraw"){
-        // await processWithdraw(transaction,status)
-      }
-  
-      throw {error_code : 401 , message}
-
+    if (!transaction) {
+      console.log("[PAYMENT-CB] Transaction not found for order_id:", order_id);
+      return res.code(404).send({ error_code: 404, message: "Transaction not found." });
     }
-    if(transaction.event == "deposit"){
-      await processDeposit(transaction)
 
-      transaction.status = "success"
-      transaction.save()
+    const isFailed = !status || status === 'failed' || status === 'cancelled' || status === 'expired';
+    if (isFailed) {
+      console.log("[PAYMENT-CB] Payment failed/cancelled for order:", order_id, "message:", message);
+      transaction.status = "failed";
+      transaction.remarks = message || "cancelled";
+      await transaction.save();
+
+      WebSocketService.sendToClient(`${transaction.userId}`, {
+        channel: "/CreditUpdate",
+        data: {
+          message: message || "Payment was cancelled.",
+          status: 'failed'
+        }
+      });
+
+      return res.code(200).send({ success: true, status: "failed" });
     }
-   
-    return
+
+    if (transaction.event === "deposit") {
+      await processDeposit(transaction);
+      transaction.status = "success";
+      await transaction.save();
+      console.log("[PAYMENT-CB] Deposit success for order:", order_id);
+    }
+
+    if (transaction.event === "withdraw") {
+      transaction.status = "success";
+      await transaction.save();
+      console.log("[PAYMENT-CB] Withdraw success for order:", order_id);
+    }
+
+    return res.code(200).send({ success: true, status: "success" });
   } catch (e) {
-    console.log(e)
-    return { error_code : e.code , message : e.message}
+    console.error("[PAYMENT-CB] Error:", e);
+    return res.code(500).send({ error_code: 500, message: e.message || "Internal error" });
   }
 }
- 
 
-async function processDeposit(transaction){
- 
+
+async function processDeposit(transaction) {
   const wallet = await Wallet.findOne({
-    where : {
-      userId : transaction.userId
-    }
-  })
- 
-  if(!wallet) {
-    throw {error_code : 404 , message : "Wallet not found." }
+    where: { userId: transaction.userId }
+  });
+
+  if (!wallet) {
+    throw { error_code: 404, message: "Wallet not found." };
   }
- 
-  const credit =  parseFloat(wallet.credits)
-  const newBalance = credit + +transaction.amount
- 
-  wallet.credits = newBalance
 
-  wallet.save() 
-  let agent_id = transaction.userId
+  const credit = parseFloat(wallet.credits);
+  const newBalance = credit + +transaction.amount;
 
-  if(transaction.remarks!="agent"){
-    agent_id  = await getAgentId(transaction.userId)
+  wallet.credits = newBalance;
+  await wallet.save();
+
+  let agent_id = transaction.userId;
+
+  if (transaction.remarks != "agent") {
+    agent_id = await getAgentId(transaction.userId);
   }
 
   const request = {
-    data :{
-      // game_type : 'pragmatic',
-      user_id : agent_id,
-      action : 'INCREASE',
-      main_db_transaction_number : transaction.orderNumber,
-      value_before : `${credit}`,
-      value : `${transaction.amount}`,
+    data: {
+      user_id: agent_id,
+      action: 'INCREASE',
+      main_db_transaction_number: transaction.orderNumber,
+      value_before: `${credit}`,
+      value: `${transaction.amount}`,
       value_after: `${newBalance}`,
-      modified_by :+agent_id,
-      created_by :+agent_id
+      modified_by: +agent_id,
+      created_by: +agent_id
     }
-  }
-    
-  CreditHistory(request)
-  
+  };
+
+  CreditHistory(request);
+
   WebSocketService.sendToClient(`${wallet.userId}`, {
-    channel:  "/CreditUpdate",
+    channel: "/CreditUpdate",
     data: {
       credits: wallet.credits,
       withdrawable: parseFloat(wallet.withdrawable) || 0,
@@ -109,17 +114,11 @@ async function processDeposit(transaction){
       status: 'success'
     }
   });
-  console.log( {
-    credits: wallet.credits,  // Send the updated credits
-    message: "Your credits have been updated successfully.",
-    status: 'success'
-  })
-
 }
 
 interface RequestParams {
-  status? : boolean;
-  message? : string;
-  order_id? : string;
-  data? : any
+  status?: boolean | string;
+  message?: string;
+  order_id?: string;
+  data?: any;
 }

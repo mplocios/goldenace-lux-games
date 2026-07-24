@@ -53,7 +53,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
   const add = useCallback((id: string) => {
     setIds((prev) => {
       if (prev.includes(id)) return prev;
-      return [...prev, id];
+      return [id, ...prev];
     });
     const token = user?.token;
     if (token) apiAddFavorite(token, id).catch(() => {});
@@ -74,7 +74,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
         return prev.filter((x) => x !== id);
       } else {
         if (token) apiAddFavorite(token, id).catch(() => {});
-        return [...prev, id];
+        return [id, ...prev];
       }
     });
   }, [user?.token]);

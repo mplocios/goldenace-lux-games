@@ -2,7 +2,7 @@ import { createFileRoute, Outlet, Link, Navigate, useRouter, useNavigate } from 
 import { useAuth } from "@/lib/auth";
 import { useState } from "react";
 import {
-  LayoutDashboard, Users, Gamepad2, ArrowLeftRight,
+  LayoutDashboard, Users, Gamepad2, ArrowLeftRight, LogIn,
   LogOut, Menu, X, Crown,
 } from "lucide-react";
 
@@ -15,6 +15,7 @@ const navItems = [
   { to: "/admin/players", label: "Players", icon: Users },
   { to: "/admin/games", label: "Games", icon: Gamepad2 },
   { to: "/admin/transactions", label: "Transactions", icon: ArrowLeftRight },
+  { to: "/admin/login-logs", label: "Login Logs", icon: LogIn },
 ];
 
 function AdminLayout() {

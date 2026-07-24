@@ -6,6 +6,8 @@ import {
   ArrowUpCircle,
   TrendingUp,
   TrendingDown,
+  Clock,
+  XCircle,
   Pencil,
   Check,
   X,
@@ -20,6 +22,21 @@ export const Route = createFileRoute("/profile")({
   component: ProfilePage,
 });
 
+const CHANNEL_LABELS: Record<string, string> = {
+  KADA_GCASH: "GCash",
+  KADA_MAYA: "Maya",
+  KADA_QRPH: "QRPH",
+  "KADA_GXCHPHM2XXX": "GCash",
+  "KADA_PAPHPHM1XXX": "Maya",
+  GCASH: "GCash",
+  MAYA: "Maya",
+};
+
+function channelLabel(raw: string | null) {
+  if (!raw) return "";
+  return CHANNEL_LABELS[raw] || raw.replace(/^KADA_/, "");
+}
+
 function fmt(d: string) {
   return new Date(d).toLocaleString(undefined, {
     month: "short",
@@ -27,6 +44,43 @@ function fmt(d: string) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function getPaymentIconAndColor(r: TransactionRecord) {
+  const status = (r.status || "").toLowerCase();
+
+  if (status === "failed") {
+    return {
+      icon: <XCircle className="h-5 w-5 shrink-0 text-rose-400" />,
+      amountColor: "text-rose-400",
+    };
+  }
+
+  if (status === "processing" || status === "pending" || status === "paying") {
+    return {
+      icon: <Clock className="h-5 w-5 shrink-0 text-muted-foreground" />,
+      amountColor: "text-muted-foreground",
+    };
+  }
+
+  if (r.event === "deposit") {
+    return {
+      icon: <ArrowDownCircle className="h-5 w-5 shrink-0 text-emerald-400" />,
+      amountColor: "text-emerald-400",
+    };
+  }
+
+  return {
+    icon: <ArrowUpCircle className="h-5 w-5 shrink-0 text-rose-400" />,
+    amountColor: "text-rose-400",
+  };
+}
+
+function StatusLabel({ status }: { status: string | null }) {
+  const s = (status || "").toLowerCase();
+  if (s === "success") return <span className="text-[10px] font-medium text-emerald-400">Success</span>;
+  if (s === "failed") return <span className="text-[10px] font-medium text-rose-400">Failed</span>;
+  return <span className="text-[10px] font-medium text-amber-400">Pending</span>;
 }
 
 const PAGE_SIZE = 10;
@@ -195,53 +249,58 @@ function ProfilePage() {
             <ul className="divide-y divide-border/60 overflow-hidden rounded-b-xl border-x border-b border-border/60 bg-card/60">
               {records.map((r) => {
                 const amt = parseFloat(String(r.amount));
-                const isPositive =
-                  r.source === "game"
-                    ? r.event === "Win" || r.event === "Draw"
-                    : r.event === "deposit";
+                const isGame = r.source === "game";
 
-                return (
-                  <li key={`${r.source}-${r.id}`} className="flex items-center gap-3 px-4 py-3">
-                    {r.source === "game" ? (
-                      isPositive ? (
+                if (isGame) {
+                  const isPositive = r.event === "Win" || r.event === "Draw";
+                  return (
+                    <li key={`${r.source}-${r.id}`} className="flex items-center gap-3 px-4 py-3">
+                      {isPositive ? (
                         <TrendingUp className="h-5 w-5 shrink-0 text-emerald-400" />
                       ) : (
                         <TrendingDown className="h-5 w-5 shrink-0 text-rose-400" />
-                      )
-                    ) : r.event === "deposit" ? (
-                      <ArrowDownCircle className="h-5 w-5 shrink-0 text-emerald-400" />
-                    ) : (
-                      <ArrowUpCircle className="h-5 w-5 shrink-0 text-rose-400" />
-                    )}
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-foreground truncate">
+                          <span className="font-medium">{r.gameName || "Game"}</span>
+                          <span className="text-muted-foreground"> · {r.event}</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">{fmt(r.date)}</p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className={`flex items-center gap-1 font-semibold ${isPositive ? "text-emerald-400" : "text-rose-400"}`}>
+                          {isPositive ? "+" : ""}
+                          <img src={acecoin} alt="" width={14} height={14} className="h-3.5 w-3.5" />
+                          {Math.abs(amt).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                          bal: {parseFloat(String(r.newBalance)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                    </li>
+                  );
+                }
 
+                const { icon, amountColor } = getPaymentIconAndColor(r);
+                const isDeposit = r.event === "deposit";
+
+                return (
+                  <li key={`${r.source}-${r.id}`} className="flex items-center gap-3 px-4 py-3">
+                    {icon}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-foreground truncate">
-                        {r.source === "game" ? (
-                          <>
-                            <span className="font-medium">{r.gameName || "Game"}</span>
-                            <span className="text-muted-foreground"> · {r.event}</span>
-                          </>
-                        ) : (
-                          <span className="capitalize font-medium">{r.event}</span>
-                        )}
+                        <span className="capitalize font-medium">{r.event}</span>
+                        {r.gameName && <span className="text-muted-foreground"> · {channelLabel(r.gameName)}</span>}
                       </p>
-                      <p className="text-xs text-muted-foreground">{fmt(r.date)}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs text-muted-foreground">{fmt(r.date)}</p>
+                        <StatusLabel status={r.status} />
+                      </div>
                     </div>
-
                     <div className="text-right shrink-0">
-                      <div
-                        className={`flex items-center gap-1 font-semibold ${
-                          isPositive ? "text-emerald-400" : "text-rose-400"
-                        }`}
-                      >
-                        {isPositive ? "+" : ""}
-                        <img
-                          src={acecoin}
-                          alt=""
-                          width={14}
-                          height={14}
-                          className="h-3.5 w-3.5"
-                        />
+                      <div className={`flex items-center gap-1 font-semibold ${amountColor}`}>
+                        {isDeposit ? "+" : "-"}
+                        <img src={acecoin} alt="" width={14} height={14} className="h-3.5 w-3.5" />
                         {Math.abs(amt).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </div>
                       <p className="text-[10px] text-muted-foreground">

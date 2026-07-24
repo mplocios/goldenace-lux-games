@@ -41,11 +41,16 @@ function PlayGame() {
     return () => document.removeEventListener("fullscreenchange", handler);
   }, []);
 
+  const initedRef = useRef(false);
+
   useEffect(() => {
     if (!user) {
       navigate({ to: "/login" });
       return;
     }
+
+    if (initedRef.current) return;
+    initedRef.current = true;
 
     async function initGame() {
       try {
@@ -140,6 +145,7 @@ function PlayGame() {
             style={{ minHeight: fullscreen ? "100%" : "calc(100dvh - 49px)" }}
             allowFullScreen
             allow="autoplay; fullscreen; clipboard-write"
+            sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
           />
         )}
       </div>

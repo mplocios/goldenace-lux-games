@@ -7,6 +7,7 @@ import Game from "../../models/Game";
 import Bets from "../../models/Bets";
 import Transaction from "../../models/Transaction";
 import BetTransaction from "../../models/BetTransaction";
+import LoginLog from "../../models/LoginLog";
 import WebSocketService from "../services/WebSocketService";
 
 Bets.belongsTo(Game, { foreignKey: "gameId", as: "game" });
@@ -58,6 +59,7 @@ export class AdminApi {
     fastify.get("/transactions", listTransactions);
     fastify.get("/chart/revenue", chartRevenue);
     fastify.get("/chart/players", chartPlayers);
+    fastify.get("/login-logs", listLoginLogs);
   }
 }
 
@@ -721,4 +723,49 @@ async function chartPlayers(req: FastifyRequest, res: FastifyReply) {
   }
 
   return res.code(200).send(result);
+}
+
+// ─── Login Logs ─────────────────────────────────────────────────────────────
+
+async function listLoginLogs(
+  req: FastifyRequest<{ Querystring: { limit?: string; offset?: string; search?: string } }>,
+  res: FastifyReply,
+) {
+  const admin = await requireAdmin(req, res);
+  if (!admin) return;
+
+  const limit = Math.min(parseInt(req.query.limit || "20", 10), 100);
+  const offset = parseInt(req.query.offset || "0", 10);
+  const search = req.query.search || "";
+
+  const where: any = {};
+  if (search) {
+    const term = `%${search}%`;
+    where[Op.or] = [
+      { mobile: { [Op.like]: term } },
+      { nickname: { [Op.like]: term } },
+      { ip: { [Op.like]: term } },
+    ];
+  }
+
+  const { count, rows } = await LoginLog.findAndCountAll({
+    where,
+    order: [["createdAt", "DESC"]],
+    limit,
+    offset,
+  });
+
+  return res.code(200).send({
+    total: count,
+    data: rows.map((r) => ({
+      id: r.id,
+      userId: r.userId,
+      mobile: r.mobile,
+      nickname: r.nickname,
+      userType: r.userType,
+      ip: r.ip,
+      userAgent: r.userAgent,
+      createdAt: r.createdAt,
+    })),
+  });
 }

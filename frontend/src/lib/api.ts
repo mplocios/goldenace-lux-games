@@ -242,6 +242,7 @@ export interface TransactionRecord {
   newBalance: number;
   gameName: string | null;
   provider: string | null;
+  status: string | null;
   date: string;
 }
 

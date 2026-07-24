@@ -74,7 +74,8 @@ async function getTransactionHistory(
         t.previousBalance AS previousBalance,
         t.newBalance AS newBalance,
         t.channel AS gameName,
-        t.status AS provider,
+        NULL AS provider,
+        t.status AS status,
         t.createdAt AS date
       FROM Transactions t
       WHERE t.userId = :userId
@@ -97,7 +98,7 @@ async function getTransactionHistory(
           t.id AS id, 'payment' AS source, t.event AS event,
           NULL AS turnover, NULL AS payout, t.amount AS amount,
           t.previousBalance AS previousBalance, t.newBalance AS newBalance,
-          t.channel AS gameName, t.status AS provider, t.createdAt AS date
+          t.channel AS gameName, NULL AS provider, t.status AS status, t.createdAt AS date
         FROM Transactions t WHERE t.userId = :userId
       ) AS combined ORDER BY date DESC LIMIT :limit OFFSET :offset
     `;

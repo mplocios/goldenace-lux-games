@@ -136,6 +136,17 @@ export interface PlayerChartPoint {
   activePlayers: number;
 }
 
+export interface LoginLogRow {
+  id: number;
+  userId: number;
+  mobile: string;
+  nickname: string | null;
+  userType: string;
+  ip: string;
+  userAgent: string | null;
+  createdAt: string;
+}
+
 export const adminApi = {
   dashboard: (token: string) => get<DashboardStats>(token, "/dashboard"),
 
@@ -163,4 +174,7 @@ export const adminApi = {
   revenueChart: (token: string) => get<ChartPoint[]>(token, "/chart/revenue"),
 
   playerChart: (token: string) => get<PlayerChartPoint[]>(token, "/chart/players"),
+
+  loginLogs: (token: string, p?: { limit?: number; offset?: number; search?: string }) =>
+    get<{ data: LoginLogRow[]; total: number }>(token, "/login-logs", p),
 };

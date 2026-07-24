@@ -21,6 +21,7 @@ import { Route as PlayGameIdRouteImport } from './routes/play.$gameId'
 import { Route as CategoryCategoryRouteImport } from './routes/category.$category'
 import { Route as AdminTransactionsRouteImport } from './routes/admin/transactions'
 import { Route as AdminPlayersRouteImport } from './routes/admin/players'
+import { Route as AdminLoginLogsRouteImport } from './routes/admin/login-logs'
 import { Route as AdminGamesRouteImport } from './routes/admin/games'
 import { Route as AdminPlayerIdRouteImport } from './routes/admin/player.$id'
 
@@ -84,6 +85,11 @@ const AdminPlayersRoute = AdminPlayersRouteImport.update({
   path: '/players',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminLoginLogsRoute = AdminLoginLogsRouteImport.update({
+  id: '/login-logs',
+  path: '/login-logs',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminGamesRoute = AdminGamesRouteImport.update({
   id: '/games',
   path: '/games',
@@ -104,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/wallet': typeof WalletRoute
   '/admin/games': typeof AdminGamesRoute
+  '/admin/login-logs': typeof AdminLoginLogsRoute
   '/admin/players': typeof AdminPlayersRoute
   '/admin/transactions': typeof AdminTransactionsRoute
   '/category/$category': typeof CategoryCategoryRoute
@@ -119,6 +126,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/wallet': typeof WalletRoute
   '/admin/games': typeof AdminGamesRoute
+  '/admin/login-logs': typeof AdminLoginLogsRoute
   '/admin/players': typeof AdminPlayersRoute
   '/admin/transactions': typeof AdminTransactionsRoute
   '/category/$category': typeof CategoryCategoryRoute
@@ -136,6 +144,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/wallet': typeof WalletRoute
   '/admin/games': typeof AdminGamesRoute
+  '/admin/login-logs': typeof AdminLoginLogsRoute
   '/admin/players': typeof AdminPlayersRoute
   '/admin/transactions': typeof AdminTransactionsRoute
   '/category/$category': typeof CategoryCategoryRoute
@@ -154,6 +163,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/wallet'
     | '/admin/games'
+    | '/admin/login-logs'
     | '/admin/players'
     | '/admin/transactions'
     | '/category/$category'
@@ -169,6 +179,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/wallet'
     | '/admin/games'
+    | '/admin/login-logs'
     | '/admin/players'
     | '/admin/transactions'
     | '/category/$category'
@@ -185,6 +196,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/wallet'
     | '/admin/games'
+    | '/admin/login-logs'
     | '/admin/players'
     | '/admin/transactions'
     | '/category/$category'
@@ -291,6 +303,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPlayersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/login-logs': {
+      id: '/admin/login-logs'
+      path: '/login-logs'
+      fullPath: '/admin/login-logs'
+      preLoaderRoute: typeof AdminLoginLogsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/games': {
       id: '/admin/games'
       path: '/games'
@@ -310,6 +329,7 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminGamesRoute: typeof AdminGamesRoute
+  AdminLoginLogsRoute: typeof AdminLoginLogsRoute
   AdminPlayersRoute: typeof AdminPlayersRoute
   AdminTransactionsRoute: typeof AdminTransactionsRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -318,6 +338,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminGamesRoute: AdminGamesRoute,
+  AdminLoginLogsRoute: AdminLoginLogsRoute,
   AdminPlayersRoute: AdminPlayersRoute,
   AdminTransactionsRoute: AdminTransactionsRoute,
   AdminIndexRoute: AdminIndexRoute,

@@ -65,7 +65,9 @@ async function processCashIn({ token, price, coins, paymentType }: any) {
     'X-API-PASSWORD': paymentAPIPassword,
   };
 
+  console.log("[CASHIN] Sending to Digiluck:", JSON.stringify(payload));
   const response = await axios.post(`${paymentURL}/cashin`, payload, { headers });
+  console.log("[CASHIN] Digiluck response:", JSON.stringify(response.data));
   if (response.data.status !== true) throw response.data;
 
   const wallet = await Wallet.findOne({ where: { userId: user_detail.id } });

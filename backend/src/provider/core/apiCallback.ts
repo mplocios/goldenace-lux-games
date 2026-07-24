@@ -218,11 +218,12 @@ class TransactionHandler {
 
     const currentCredits = wallet.credits;
 
-    let gameRound = await GameRound.findOne({ where: { GAME_ID: +id, GAMEROUND: round_id } });
+    const roundKey = round_id || transaction_id;
+    let gameRound = await GameRound.findOne({ where: { GAME_ID: +id, GAMEROUND: roundKey } });
     if (!gameRound) {
       gameRound = await GameRound.create({
         GAME_ID: +id,
-        GAMEROUND: round_id,
+        GAMEROUND: roundKey,
         STATUS: 'ONGOING',
         TRANSACTION_ID: transaction_id,
       });

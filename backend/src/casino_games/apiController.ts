@@ -389,10 +389,21 @@ class ApiController {
     try {
       const requestData = req.body;
       const gameUuid = requestData.game_uuid;
+      const demo = !!requestData.demo;
       const game = await Game.findOne({ where: { uuid: gameUuid } });
       if (!game) return res.status(404).send({ error: 'Game not found' });
 
       if (game.source === 'corebridge') {
+        if (demo) {
+          const data = await coreBridgeClient.post('/games/init-demo', {
+            game_uuid: gameUuid,
+            currency: requestData.currency || COREBRIDGE_CURRENCY,
+            language: requestData.language || 'en',
+            ...(requestData.return_url && { return_url: requestData.return_url }),
+          });
+          return data;
+        }
+
         try {
           await coreBridgeClient.post('/player/create', {
             player_id: requestData.player_id,
@@ -614,11 +625,12 @@ class initGamesParams {
   player_name: string;
   currency: string;
   session_id?: string;
-  device?: 'desktop' | 'mobile'; // Default: "desktop"
+  device?: 'desktop' | 'mobile';
   return_url?: string;
   language?: string;
   email?: string;
   lobby_data?: string;
+  demo?: boolean;
 };
 class selfValidateParams {
   game_uuid?: string;

@@ -6,11 +6,15 @@ import { useAuth } from "@/lib/auth";
 const API_URL = import.meta.env.VITE_API_URL ?? "";
 
 export const Route = createFileRoute("/play/$gameId")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    demo: search.demo === "true" || search.demo === true,
+  }),
   component: PlayGame,
 });
 
 function PlayGame() {
   const { gameId } = Route.useParams();
+  const { demo } = Route.useSearch();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [gameUrl, setGameUrl] = useState<string | null>(null);
@@ -44,7 +48,7 @@ function PlayGame() {
   const initedRef = useRef(false);
 
   useEffect(() => {
-    if (!user) {
+    if (!demo && !user) {
       navigate({ to: "/login" });
       return;
     }
@@ -54,17 +58,24 @@ function PlayGame() {
 
     async function initGame() {
       try {
+        const body: Record<string, unknown> = {
+          game_uuid: gameId,
+          currency: "PHP",
+          language: "en",
+          return_url: window.location.origin,
+        };
+
+        if (demo) {
+          body.demo = true;
+        } else {
+          body.player_id = String(user!.id);
+        }
+
         const [initRes, gameRes] = await Promise.all([
           fetch(`${API_URL}/api/play/init`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              game_uuid: gameId,
-              player_id: String(user!.id),
-              currency: "PHP",
-              language: "en",
-              return_url: window.location.origin,
-            }),
+            body: JSON.stringify(body),
           }),
           fetch(`${API_URL}/api/games/${gameId}`).catch(() => null),
         ]);
@@ -91,9 +102,9 @@ function PlayGame() {
     }
 
     initGame();
-  }, [gameId, user, navigate]);
+  }, [gameId, user, navigate, demo]);
 
-  if (!user) return null;
+  if (!demo && !user) return null;
 
   return (
     <div ref={containerRef} className={`flex flex-col bg-background ${fullscreen ? "fixed inset-0 z-50" : "min-h-dvh"}`}>
@@ -102,7 +113,14 @@ function PlayGame() {
           <ArrowLeft className="h-4 w-4" />
           <span className="hidden sm:inline">Back to lobby</span>
         </Link>
-        <span className="truncate px-4 font-display text-sm text-foreground">{gameName || gameId}</span>
+        <div className="flex items-center gap-2">
+          {demo && (
+            <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-400">
+              Demo
+            </span>
+          )}
+          <span className="truncate px-4 font-display text-sm text-foreground">{gameName || gameId}</span>
+        </div>
         <button
           onClick={toggleFullscreen}
           className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-gold"
